@@ -38,6 +38,8 @@ window.onload = function() {
     svg.addEventListener("mousemove", onSVGMouseMove, false);
     svg.addEventListener("mouseup", onSVGMouseUp, false);
     svg.addEventListener("contextmenu", function(e) { e.preventDefault(); editMode = 1 - editMode;}, false);
+
+    Module.loadModel();
 }
 
 var onSVGMouseDown = function(e) {
