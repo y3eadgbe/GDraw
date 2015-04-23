@@ -37,16 +37,31 @@ window.onload = function() {
     svg.addEventListener("mousedown", onSVGMouseDown, false);
     svg.addEventListener("mousemove", onSVGMouseMove, false);
     svg.addEventListener("mouseup", onSVGMouseUp, false);
-    svg.addEventListener("contextmenu", function(e) { e.preventDefault(); editMode = 1 - editMode;}, false);
+    svg.addEventListener("contextmenu", function(e) { e.preventDefault();}, false);
+
+    document.getElementById("btn-draw").addEventListener("click", function(){setEditMode(Mode.DRAW)});
+    document.getElementById("btn-edit").addEventListener("click", function(){setEditMode(Mode.EDIT)});
+    document.getElementById("btn-delete").addEventListener("click", function(){setEditMode(Mode.DELETE)});
 
     Module.loadModel();
+
+    setEditMode(Mode.DRAW);
 }
 
 var onSVGMouseDown = function(e) {
     e.preventDefault();
     dragging = true;
-    if (editMode === Mode.DRAW) {
+    switch (editMode) {
+    case Mode.DRAW:
         mousePath = [[mouseX, mouseY]];
+        break;
+    case Mode.DELETE:
+        var id = getNodeIdFromPosition(mouseX, mouseY);
+        if (id !== -1) {
+            graph.deleteNode(id);
+        }
+    default:
+        break;
     }
 };
 
@@ -78,6 +93,30 @@ var onSVGMouseUp = function(e) {
 
     mousePath = [];
     dragging = false;
+}
+
+var setEditMode = function(mode) {
+    editMode = mode;
+    var elements = document.getElementsByClassName("edit-mode");
+    for (var i = 0; i < elements.length; i++) {
+        elements[i].classList.remove("active");
+    }
+
+    var activeElement;
+    switch (mode) {
+    case Mode.DRAW:
+        activeElement = elements["btn-draw"];
+        break;
+    case Mode.EDIT:
+        activeElement = elements["btn-edit"];
+        break;
+    case Mode.DELETE:
+        activeElement = elements["btn-delete"];
+        break;
+    default:
+        break;
+    }
+    activeElement.classList.add("active");
 }
 
 var addShape = function(shape) {
@@ -115,6 +154,9 @@ var getNodeIdFromPosition = function(x, y) {
     }
 
     return ans;
+}
+
+var getEdgeIdFromPosition = function(x, y) {
 }
 
 var drawLocus = function() {

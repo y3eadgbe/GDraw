@@ -1,11 +1,82 @@
 body {
     text-align: center;
+    position: relative;
+    font-family: Verdana, sans-serif;
 }
 
 div#wrapper {
+    width: 950px;
     margin: 0 auto;
 }
 
-div#sidebar {
+div#canvas {
+    float: left;
+    width: 800px;
+}
+
+div#toolbar {
+    float: left;
+    width: 150px;
+    text-align: center;
+}
+
+div#header {
     
+}
+
+div#footer {
+    clear: both;
+    margin: 10px;
+}
+
+.button {
+    cursor: pointer;
+    user-select: none;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    display: inline-block;
+    text-align: center;
+    text-decolation: none;
+    color: #444444;
+    background-color: #ffffff;
+    border: 2px solid #444444;
+    width: 130px;
+    height: 40px;
+    line-height: 40px;
+    font-size: 18px;
+    margin: 0 0 5px 0;
+}
+
+.button,
+.button::before,
+.button::after {
+    -webkit-transition: all .1s;
+    transition: all .1s;
+}
+
+.button:hover {
+    background-color: #eeeeee;
+}
+
+.button:active {
+    
+}
+
+.active {
+    border-color: #ff8f22;
+    color: #ff8f22;
+}
+
+.invalid {
+    border-color: #aaaaaa;
+    color: #aaaaaa;
+}
+
+.invalid:hover {
+    background-color: #ffffff;
+}
+
+.small {
+    width: 61px;
+    font-size: 15px;
 }

@@ -19,7 +19,6 @@ Graph.prototype = {
     addEdge:       GraphAddEdge,       // addEdge(source, target, directed, width)
     deleteEdge:    GraphDeleteEdge,    // deleteEdge(id)
     setEdgeWidth:  GraphSetEdgeWidth,  // setEdgeWidth(id, width)
-    //draw:          GraphDraw           // draw()
 };
 
 //-- implementation
