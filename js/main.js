@@ -19,7 +19,7 @@ var nodeToFront = true;
 window.onload = function() {
     svg = document.getElementById("main-svg");
     d3svg = d3.select("body").select("svg");
-    graph = new Graph(drawGraph);
+    graph = new Graph(onGraphChanged);
 
     for (var i = 0; i * gridWidth < 800; i++) {
         for (var j = 0; j * gridWidth < 600; j++) {
@@ -126,7 +126,7 @@ var addShape = function(shape) {
     
     switch (shape.shape) {
     case Module.Shape.CIRCLE:
-        graph.addNode(shape.x1, shape.y1);
+        graph.addNode(Math.round(shape.x1), Math.round(shape.y1));
         break;
     case Module.Shape.LINE:
         if (sid === -1) break;
@@ -178,6 +178,10 @@ var drawLocus = function() {
         .attr("stroke", "red")
         .attr("stroke-opacity", 0.7)
         .attr("fill", "none");
+}
+
+var onGraphChanged = function() {
+    drawGraph();
 }
 
 var drawGraph = function() {
@@ -271,8 +275,11 @@ var drawGraph = function() {
                 }
                 drawGraph();
             }}).on("dragend", function(d) {
-                d.value.vx = d.value.x;
-                d.value.vy = d.value.y;
+                if (editMode === Mode.EDIT) {
+                    d.value.vx = d.value.x;
+                    d.value.vy = d.value.y;
+                    graph.setNodePosition(d.value.id, d.value.x, d.value.y);
+                }
             }));
 
     if (nodeToFront) {
