@@ -42,7 +42,11 @@ window.onload = function() {
     document.getElementById("btn-draw").addEventListener("click", function(){setEditMode(Mode.DRAW)});
     document.getElementById("btn-edit").addEventListener("click", function(){setEditMode(Mode.EDIT)});
     document.getElementById("btn-delete").addEventListener("click", function(){setEditMode(Mode.DELETE)});
-
+    document.getElementById("btn-undo").addEventListener("click", onUndo);
+    document.getElementById("btn-redo").addEventListener("click", onRedo);
+    document.getElementById("btn-export-edge").addEventListener("click", onExportEdge);
+    document.getElementById("btn-export-svg").addEventListener("click", onExportSVG);
+    
     Module.loadModel();
 
     setEditMode(Mode.DRAW);
@@ -59,6 +63,7 @@ var onSVGMouseDown = function(e) {
         var id = getNodeIdFromPosition(mouseX, mouseY);
         if (id !== -1) {
             graph.deleteNode(id);
+            graph.commit();
         }
     default:
         break;
@@ -119,6 +124,22 @@ var setEditMode = function(mode) {
     activeElement.classList.add("active");
 }
 
+var onUndo = function() {
+    graph.undo();
+}
+
+var onRedo = function() {
+    graph.redo();
+}
+
+var onExportEdge = function() {
+    document.getElementById("textarea").value = getEdgeListString();
+}
+
+var onExportSVG = function() {
+    document.getElementById("textarea").value = getSVGString();
+}
+
 var addShape = function(shape) {
     var sid = getNodeIdFromPosition(shape.x1, shape.y1);
     var tid = getNodeIdFromPosition(shape.x2, shape.y2);
@@ -143,6 +164,7 @@ var addShape = function(shape) {
         graph.addEdge(sid, tid);
         break;
     }
+    graph.commit();
 }
 
 var getNodeIdFromPosition = function(x, y) {
@@ -182,6 +204,19 @@ var drawLocus = function() {
 
 var onGraphChanged = function() {
     drawGraph();
+    
+    var undoButton = document.getElementById("btn-undo");
+    var redoButton = document.getElementById("btn-redo");
+    if (graph.canUndo()) {
+        undoButton.classList.remove("invalid");
+    } else {
+        undoButton.classList.add("invalid");
+    }
+    if (graph.canRedo()) {
+        redoButton.classList.remove("invalid");
+    } else {
+        redoButton.classList.add("invalid");
+    }
 }
 
 var drawGraph = function() {
@@ -279,6 +314,7 @@ var drawGraph = function() {
                     d.value.vx = d.value.x;
                     d.value.vy = d.value.y;
                     graph.setNodePosition(d.value.id, d.value.x, d.value.y);
+                    graph.commit();
                 }
             }));
 
@@ -289,6 +325,60 @@ var drawGraph = function() {
                 return a.key > b.key ? 1 : -1;
             });
     }
+}
+
+var getSVGString = function() {
+    var output = "";
+    var elements = d3svg.selectAll(".nodes, .edges")[0];
+    output += "<?xml version=\"1.0\"?>\n";
+    output += "<svg xmlns=\"http://www.w3.org/2000/svg\">\n";
+    for (var i = 0; i < elements.length; i++) {
+        output += "  " + elements[i].outerHTML + "\n";
+    }
+    output += "</svg>\n";
+    console.log(output);
+    return output;
+}
+
+var getEdgeListString = function() {
+    var edges = graph.edges;
+    var directed = false;
+    var normalizedId = new Object();
+    var itr = 1;
+
+    console.log(edges);
+    
+    for (var i in edges) {
+        var e = edges[i];
+        directed |= e.directed;
+        if (normalizedId[e.source] === undefined) {
+            normalizedId[e.source] = itr;
+            itr++;
+        }
+        if (normalizedId[e.target] === undefined) {
+            normalizedId[e.target] = itr;
+            itr++;
+        }
+    }
+    
+    var output = "";
+    output += "#" + (directed ? "Directed" : "Undirected") + " graph\n"
+    output += "#Nodes: " + Object.keys(graph.nodes).length.toString() + "\n";
+    output += "#Edges: " + Object.keys(graph.edges).length.toString() + "\n";
+    for (var i in edges) {
+        var e = edges[i];
+        var u = normalizedId[e.source], v = normalizedId[e.target];
+        if (!directed) {
+            if (v < u) v = [u, u = v][0];
+            output += u.toString() + " " + v.toString() + "\n";
+        } else {
+            output += u.toString() + " " + v.toString() + "\n";
+            if (!e.directed) {
+                output += v.toString() + " " + u.toString() + "\n";
+            }
+        }
+    }
+    return output;
 }
 
 

@@ -14,6 +14,7 @@ var Graph = function(onChanged) {
 }
 
 Graph.prototype = {
+// public
     constructor:     Graph,                // Graph(onChanged)
     addNode:         GraphAddNode,         // addNode(x, y, radius, width)
     deleteNode:      GraphDeleteNode,      // deleteNode(id)
@@ -28,9 +29,11 @@ Graph.prototype = {
     redo:            GraphRedo,            // redo()
     canUndo:         GraphCanUndo,         // canUndo()
     canRedo:         GraphCanRedo,         // canRedo()
-    addPatch:        GraphAddPatch,        // addPatch(patch)
-    undoPatch:       GraphUndoPatch,       // undoPatch(patch)
-    redoPatch:       GraphRedoPatch,       // redoPatch(patch)
+
+//private
+    _addPatch:       GraphAddPatch,        // addPatch(patch)
+    _undoPatch:      GraphUndoPatch,       // undoPatch(patch)
+    _redoPatch:      GraphRedoPatch        // redoPatch(patch)
 };
 
 //-- implementation
@@ -86,7 +89,7 @@ function GraphAddNode(x, y, radius, width) {
     this.adjacencyList[this.nodeItr] = new Object();
     patch.after = this.nodes[this.nodeItr].copy();
     
-    this.addPatch(patch);
+    this._addPatch(patch);
     this.onChanged();
     return this.nodeItr++;
 }
@@ -102,7 +105,7 @@ function GraphSetNodePosition(id, x, y) {
     this.nodes[id].prevy = y;
     patch.after = this.nodes[id].copy();
 
-    this.addPatch(patch);
+    this._addPatch(patch);
     this.onChanged();
 }
 
@@ -111,7 +114,7 @@ function GraphSetNodeRadius(id, radius) {
     this.nodes[id].radius = radius;
     patch.after = this.nodes[id].copy();
 
-    this.addPatch(patch);
+    this._addPatch(patch);
     this.onChanged();
 }
 
@@ -120,7 +123,7 @@ function GraphSetNodeWidth(id, width) {
     this.nodes[id].width = width;
     patch.after = this.nodes[id].copy();
 
-    this.addPatch(patch);
+    this._addPatch(patch);
     this.onChanged();
 }
 
@@ -137,7 +140,7 @@ function GraphDeleteNode(id) {
     delete this.nodes[id];
     delete this.adjacencyList[id];
 
-    this.addPatch(patch);
+    this._addPatch(patch);
     this.onChanged();
 }
 
@@ -158,7 +161,7 @@ function GraphAddEdge(source, target, directed, width) {
     this.edges[this.edgeItr] = new Edge(this.edgeItr, source, target, directed, width);
     var patch = new Patch(UpdateType.EDGE_ADDITION, undefined, this.edges[this.edgeItr].copy());
     
-    this.addPatch(patch);
+    this._addPatch(patch);
     this.onChanged();
     return this.edgeItr++;
 }
@@ -168,7 +171,7 @@ function GraphSetEdgeWidth(id, width) {
     this.edges[id].width = width;
     patch.after = this.edges[id].copy();
 
-    this.addPatch(patch);
+    this._addPatch(patch);
     this.onChanged();
 }
 
@@ -186,7 +189,7 @@ function GraphDeleteEdge(id, suppressCallBack) {
     
     delete this.edges[id];
 
-    this.addPatch(patch);
+    this._addPatch(patch);
     if (!suppressCallBack) this.onChanged();
 }
 
@@ -202,18 +205,20 @@ function GraphUndo() {
     if (this.undoStack.length === 0) return;
     var e = this.undoStack.pop();
     for (var i = e.length - 1; i >= 0; i--) {
-        this.undoPatch(e[i]);
+        this._undoPatch(e[i]);
     }
     this.redoStack.push(e);
+    this.onChanged();
 }
 
 function GraphRedo() {
     if (this.redoStack.length === 0) return;
     var e = this.redoStack.pop();
     for (var i = 0; i < e.length; i++) {
-        this.redoPatch(e[i]);
+        this._redoPatch(e[i]);
     }
     this.undoStack.push(e);
+    this.onChanged();
 }
  
 function GraphCanUndo() {
