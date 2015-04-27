@@ -17,7 +17,7 @@ var gridMode = false;
 var nodeToFront = true;
 
 window.onload = function() {
-    svg = document.getElementById("main-svg");
+    svg = $("#main-svg");
     d3svg = d3.select("body").select("svg");
     graph = new Graph(onGraphChanged);
 
@@ -34,18 +34,22 @@ window.onload = function() {
         }
     }
 
-    svg.addEventListener("mousedown", onSVGMouseDown, false);
-    svg.addEventListener("mousemove", onSVGMouseMove, false);
-    svg.addEventListener("mouseup", onSVGMouseUp, false);
-    svg.addEventListener("contextmenu", function(e) { e.preventDefault();}, false);
+    svg.mousedown(onSVGMouseDown);
+    svg.mousemove(onSVGMouseMove);
+    svg.mouseup(onSVGMouseUp);
+    svg.bind("contextmenu", function(e) { e.preventDefault();});
 
-    document.getElementById("btn-draw").addEventListener("click", function(){setEditMode(Mode.DRAW)});
-    document.getElementById("btn-edit").addEventListener("click", function(){setEditMode(Mode.EDIT)});
-    document.getElementById("btn-delete").addEventListener("click", function(){setEditMode(Mode.DELETE)});
-    document.getElementById("btn-undo").addEventListener("click", onUndo);
-    document.getElementById("btn-redo").addEventListener("click", onRedo);
-    document.getElementById("btn-export-edge").addEventListener("click", onExportEdge);
-    document.getElementById("btn-export-svg").addEventListener("click", onExportSVG);
+    $("#btn-draw").click(function(){setEditMode(Mode.DRAW)});
+    $("#btn-edit").click(function(){setEditMode(Mode.EDIT)});
+    $("#btn-delete").click(function(){setEditMode(Mode.DELETE)});
+    $("#btn-undo").click(onUndo);
+    $("#btn-redo").click(onRedo);
+    $("#btn-export-edge").click(onExportEdge);
+    $("#btn-export-svg").click(onExportSVG);
+
+    // short cuts
+    shortcut.add("Ctrl+Z", onUndo, {"disable_in_input": true});
+    shortcut.add("Ctrl+Y", onRedo, {"disable_in_input": true});
     
     Module.loadModel();
 
@@ -71,7 +75,7 @@ var onSVGMouseDown = function(e) {
 };
 
 var onSVGMouseMove = function(e) {
-    var boundingBox = svg.getBoundingClientRect();
+    var boundingBox = svg[0].getBoundingClientRect();
     mouseX = e.clientX - boundingBox.left;
     mouseY = e.clientY - boundingBox.top;
     if (dragging && editMode === Mode.DRAW) {
@@ -102,26 +106,23 @@ var onSVGMouseUp = function(e) {
 
 var setEditMode = function(mode) {
     editMode = mode;
-    var elements = document.getElementsByClassName("edit-mode");
-    for (var i = 0; i < elements.length; i++) {
-        elements[i].classList.remove("active");
-    }
+    $(".edit-mode").removeClass("active");
 
     var activeElement;
     switch (mode) {
     case Mode.DRAW:
-        activeElement = elements["btn-draw"];
+        activeElement = $("#btn-draw");
         break;
     case Mode.EDIT:
-        activeElement = elements["btn-edit"];
+        activeElement = $("#btn-edit");
         break;
     case Mode.DELETE:
-        activeElement = elements["btn-delete"];
+        activeElement = $("btn-delete");
         break;
     default:
         break;
     }
-    activeElement.classList.add("active");
+    activeElement.addClass("active");
 }
 
 var onUndo = function() {
@@ -133,11 +134,11 @@ var onRedo = function() {
 }
 
 var onExportEdge = function() {
-    document.getElementById("textarea").value = getEdgeListString();
+    $("#textarea").val(getEdgeListString());
 }
 
 var onExportSVG = function() {
-    document.getElementById("textarea").value = getSVGString();
+    $("#textarea").val(getSVGString());
 }
 
 var addShape = function(shape) {
@@ -205,17 +206,15 @@ var drawLocus = function() {
 var onGraphChanged = function() {
     drawGraph();
     
-    var undoButton = document.getElementById("btn-undo");
-    var redoButton = document.getElementById("btn-redo");
     if (graph.canUndo()) {
-        undoButton.classList.remove("invalid");
+        $("#btn-undo").removeClass("invalid");
     } else {
-        undoButton.classList.add("invalid");
+        $("#btn-undo").addClass("invalid");
     }
     if (graph.canRedo()) {
-        redoButton.classList.remove("invalid");
+        $("#btn-redo").removeClass("invalid");
     } else {
-        redoButton.classList.add("invalid");
+        $("#btn-redo").addClass("invalid");
     }
 }
 
@@ -336,7 +335,6 @@ var getSVGString = function() {
         output += "  " + elements[i].outerHTML + "\n";
     }
     output += "</svg>\n";
-    console.log(output);
     return output;
 }
 
@@ -346,8 +344,6 @@ var getEdgeListString = function() {
     var normalizedId = new Object();
     var itr = 1;
 
-    console.log(edges);
-    
     for (var i in edges) {
         var e = edges[i];
         directed |= e.directed;
