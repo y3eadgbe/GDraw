@@ -16,11 +16,12 @@ var editMode = Mode.DRAW;
 var gridMode = false;
 var nodeToFront = true;
 
-window.onload = function() {
+var main = function() {
     svg = $("#main-svg");
     d3svg = d3.select("body").select("svg");
     graph = new Graph(onGraphChanged);
 
+    // draw grid
     for (var i = 0; i * gridWidth < 800; i++) {
         for (var j = 0; j * gridWidth < 600; j++) {
             if ((i + j) % 2 === 1) {
@@ -34,6 +35,7 @@ window.onload = function() {
         }
     }
 
+    // events handlers
     svg.mousedown(onSVGMouseDown);
     svg.mousemove(onSVGMouseMove);
     svg.mouseup(onSVGMouseUp);
@@ -47,7 +49,7 @@ window.onload = function() {
     $("#btn-export-edge").click(onExportEdge);
     $("#btn-export-svg").click(onExportSVG);
 
-    // short cuts
+    // shortcuts
     shortcut.add("Ctrl+Z", onUndo, {"disable_in_input": true});
     shortcut.add("Ctrl+Y", onRedo, {"disable_in_input": true});
     
@@ -68,6 +70,12 @@ var onSVGMouseDown = function(e) {
         if (id !== -1) {
             graph.deleteNode(id);
             graph.commit();
+        } else {
+            id = getEdgeIdFromPosition(mouseX, mouseY);
+            if (id !== -1) {
+                graph.deleteEdge(id);
+                graph.commit();
+            }
         }
     default:
         break;
@@ -180,6 +188,25 @@ var getNodeIdFromPosition = function(x, y) {
 }
 
 var getEdgeIdFromPosition = function(x, y) {
+    var ans = -1;
+    for (var i in graph.edges) {
+        var e = graph.edges[i];
+        var sv = graph.nodes[e.source];
+        var tv = graph.nodes[e.target];
+        var dx = tv.x - sv.x;
+        var dy = tv.y - sv.y;
+        var length = Math.max(1.0, Math.sqrt(dx * dx + dy * dy));
+        var x1 = sv.x + dx / length * (sv.radius + sv.width / 2);
+        var y1 = sv.y + dy / length * (sv.radius + sv.width / 2);
+        var x2 = tv.x - dx / length * (sv.radius + sv.width / 2);
+        var y2 = tv.y - dy / length * (sv.radius + sv.width / 2);
+        console.log([[x1, y1], [x2, y2], [x, y]]);
+        var d = distanceSP([x1, y1], [x2, y2], [x, y]);
+        if (d < e.width / 2 + 5.0) ans = e.id;
+        console.log(d);
+    }
+    console.log(ans);
+    return ans;
 }
 
 var drawLocus = function() {
@@ -377,5 +404,6 @@ var getEdgeListString = function() {
     return output;
 }
 
+window.onload = main;
 
 //main();
