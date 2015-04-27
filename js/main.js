@@ -35,11 +35,14 @@ var main = function() {
         }
     }
 
-    // events handlers
+    // event handlers
     svg.mousedown(onSVGMouseDown);
     svg.mousemove(onSVGMouseMove);
     svg.mouseup(onSVGMouseUp);
     svg.bind("contextmenu", function(e) { e.preventDefault();});
+    svg.bind("touchstart", onSVGMouseDown);
+    svg.bind("touchmove", onSVGMouseMove); 
+    svg.bind("touchend", onSVGMouseUp); 
 
     $("#btn-draw").click(function(){setEditMode(Mode.DRAW)});
     $("#btn-edit").click(function(){setEditMode(Mode.EDIT)});
@@ -125,7 +128,7 @@ var setEditMode = function(mode) {
         activeElement = $("#btn-edit");
         break;
     case Mode.DELETE:
-        activeElement = $("btn-delete");
+        activeElement = $("#btn-delete");
         break;
     default:
         break;
