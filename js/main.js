@@ -15,6 +15,7 @@ var mousePath = []
 var editMode = Mode.DRAW;
 var gridMode = false;
 var nodeToFront = true;
+var selectedNodeId = [];
 
 var main = function() {
     svg = $("#main-svg");
@@ -51,6 +52,7 @@ var main = function() {
     $("#btn-redo").click(onRedo);
     $("#btn-export-edge").click(onExportEdge);
     $("#btn-export-svg").click(onExportSVG);
+    $("#node-color").change(onChangeColor);
 
     // shortcuts
     shortcut.add("Ctrl+Z", onUndo, {"disable_in_input": true});
@@ -80,8 +82,16 @@ var onSVGMouseDown = function(e) {
                 graph.commit();
             }
         }
+        break;
     default:
         break;
+    }
+    
+    var id = getNodeIdFromPosition(mouseX, mouseY);
+    if(id !== -1){
+        selectedNodeId = [id];
+        $('#node-id').val(id);
+        $('#node-color').val(graph.getNodeColor(id));
     }
 };
 
@@ -150,6 +160,17 @@ var onExportEdge = function() {
 
 var onExportSVG = function() {
     $("#textarea").val(getSVGString());
+}
+
+var onChangeColor = function() {
+    
+    for(var i = 0; i < selectedNodeId.length; ++i) {
+        graph.setNodeColor(selectedNodeId[i], $("#node-color").val());
+    }
+    
+    if(selectedNodeId.length > 0) {
+        graph.commit();
+    }
 }
 
 var addShape = function(shape) {
@@ -263,46 +284,37 @@ var drawGraph = function() {
     lines.enter().append("line");
     lines.exit().remove();
     
-    lines.attr("class", "edges")
-        .attr("x1", function(d) {
-            var e = d.value;
-            var sv = g.nodes[e.source];
-            var tv = g.nodes[e.target];
-            var dx = tv.x - sv.x;
-            var dy = tv.y - sv.y;
-            var length = Math.max(1.0, Math.sqrt(dx * dx + dy * dy));
-            return sv.x + dx / length * (sv.radius + sv.width / 2);
-        })
-        .attr("y1", function(d) {
-            var e = d.value;
-            var sv = g.nodes[e.source];
-            var tv = g.nodes[e.target];
-            var dx = tv.x - sv.x;
-            var dy = tv.y - sv.y;
-            var length = Math.max(1.0, Math.sqrt(dx * dx + dy * dy));
-            return sv.y + dy / length * (sv.radius + sv.width / 2);
-        })
-        .attr("x2", function(d) {
-            var e = d.value;
-            var sv = g.nodes[e.source];
-            var tv = g.nodes[e.target];
-            var dx = tv.x - sv.x;
-            var dy = tv.y - sv.y;
-            var length = Math.max(1.0, Math.sqrt(dx * dx + dy * dy))
-            return tv.x - dx / length * (tv.radius + tv.width / 2);
-        })
-        .attr("y2", function(d) {
-            var e = d.value;
-            var sv = g.nodes[e.source];
-            var tv = g.nodes[e.target];
-            var dx = tv.x - sv.x;
-            var dy = tv.y - sv.y;
-            var length = Math.max(1.0, Math.sqrt(dx * dx + dy * dy))
-            return tv.y - dy / length * (tv.radius + tv.width / 2);
-        })
-        .attr("stroke-width", function(d) {return d.value.width;})
-        .attr("stroke", "black");
+    var getXY = function(sourceid, targetid){
+        var sv = g.nodes[sourceid];
+        var tv = g.nodes[targetid];
+        var dx = tv.x - sv.x;
+        var dy = tv.y - sv.y;
+        var scale = (sv.radius + sv.width / 2) / Math.max(1.0, Math.sqrt(dx * dx + dy * dy));
+        return {v : sv, x : dx * scale, y : dy * scale};
+    }
 
+    lines.attr({
+        "class" : "edges",
+        "x1" : function(d) {
+            var  t =  getXY(d.value.source, d.value.target);
+            return t.v.x + t.x;
+        },
+        "y1" : function(d) {
+            var  t =  getXY(d.value.source, d.value.target);
+            return t.v.y + t.y;
+        },
+        "x2" : function(d) {
+            var  t =  getXY(d.value.target, d.value.source);
+            return t.v.x + t.x;
+        },
+        "y2" : function(d) {
+            var  t =  getXY(d.value.target, d.value.source);
+            return t.v.y + t.y;
+        },
+        "stroke-width" : function(d) {return d.value.width;},
+        "stroke" : "black",
+    });
+    
     //lines.order();
 
     // nodes
@@ -324,7 +336,7 @@ var drawGraph = function() {
         .attr("stroke-width", function(d) {return d.value.width;})
         .attr("stroke", "black")
         .attr("stroke-opacity", 1)
-        .attr("fill", "white")
+        .attr("fill", function(d){return d.value.color;})
         .attr("fill-opacity", 1)
         .call(d3.behavior.drag().on("drag", function(d) {
             if (editMode === Mode.EDIT) {

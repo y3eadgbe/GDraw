@@ -21,6 +21,8 @@ Graph.prototype = {
     setNodePosition: GraphSetNodePosition, // setNodePosition(x, y)
     setNodeRadius:   GraphSetNodeRadius,   // setNodeRadius(id, radius)
     setNodeWidth:    GraphSetNodeWidth,    // setNodeWidth(id, width)
+    setNodeColor:    GraphSetNodeColor,    // setNodeColor(id, color)
+    getNodeColor:    GraphGetNodeColor,    // getNodeColor(id)
     addEdge:         GraphAddEdge,         // addEdge(source, target, directed, width)
     deleteEdge:      GraphDeleteEdge,      // deleteEdge(id)
     setEdgeWidth:    GraphSetEdgeWidth,    // setEdgeWidth(id, width)
@@ -38,19 +40,21 @@ Graph.prototype = {
 
 //-- implementation
 
-var Node = function(id, x, y, radius, width) {
+var Node = function(id, x, y, radius, width, color) {
     this.id = id;
-    this.x = x === undefined ? 0 : x;
-    this.y = y === undefined ? 0 : y;
+    this.x = x || 0;
+    this.y = y || 0;
     this.vx = this.x;
     this.vy = this.y;
     this.prevx = this.x;
     this.prevy = this.y;
-    this.radius = radius === undefined ? 20 : radius;
-    this.width = width === undefined ? 2 : width
-
+    this.radius = radius || 20;
+    this.width = width || 2;
+    this.color = color || "white";
+    
     this.copy = function() {
-        var newObject = new Node(this.id, this.prevx, this.prevy, this.radius, this.width);
+        var newObject =
+            new Node(this.id, this.prevx, this.prevy, this.radius, this.width, this.color);
         return newObject;
     }
 }
@@ -125,6 +129,20 @@ function GraphSetNodeWidth(id, width) {
 
     this._addPatch(patch);
     this.onChanged();
+}
+
+function GraphSetNodeColor(id, color) {
+    var patch = new Patch(UpdateType.NODE_ATTRIBUTE, this.nodes[id].copy(), undefined);
+    this.nodes[id].color = color;
+    patch.after = this.nodes[id].copy();
+    
+    this._addPatch(patch);
+    this.onChanged();
+}
+
+function GraphGetNodeColor(id) {
+    console.log(id);
+    return this.nodes[id].color;
 }
 
 function GraphDeleteNode(id) {
