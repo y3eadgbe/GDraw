@@ -42,15 +42,15 @@ Graph.prototype = {
 
 var Node = function(id, x, y, radius, width, color) {
     this.id = id;
-    this.x = x || 0;
-    this.y = y || 0;
+    this.x = x === undefined ? 0 : x;
+    this.y = y === undefined ? 0 : y;
     this.vx = this.x;
     this.vy = this.y;
     this.prevx = this.x;
     this.prevy = this.y;
-    this.radius = radius || 20;
-    this.width = width || 2;
-    this.color = color || "white";
+    this.radius = radius === undefined ? 20 : radius;
+    this.width = width === undefined ? 2 : width;
+    this.color = color === undefined ? "white" : color;
     
     this.copy = function() {
         var newObject =
