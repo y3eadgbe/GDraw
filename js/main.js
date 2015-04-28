@@ -53,6 +53,7 @@ var main = function() {
     $("#btn-export-edge").click(onExportEdge);
     $("#btn-export-svg").click(onExportSVG);
     $("#btn-export-json").click(onExportJSON);
+    $("#btn-import-json").click(onImportJSON);
     $("#node-color").change(onChangeNodeColor);
     $("#node-stroke-color").change(onChangeNodeStrokeColor);    
 
@@ -171,6 +172,28 @@ var onExportSVG = function() {
 
 var onExportJSON = function() {
     $("#textarea").val(getJSONString());
+}
+
+var onImportJSON = function() {
+    var JSONobj = JSON.parse($("#textarea").val());
+
+    graph.nodes = JSONobj.nodes;
+    graph.edges = JSONobj.edges;
+    graph.adjacencyList = JSONobj.adjacencyList;
+    graph.nodeItr = JSONobj.nodeItr;
+    graph.edgeItr = JSONobj.edgeItr;
+    graph.undoStack = [];
+    graph.redoStack = [];
+    graph.changeList = [];
+
+    for(var i in graph.nodes) {
+        graph.nodes[i].__proto__ = GraphNode.prototype;
+    }
+
+    for(var i in graph.edges) {
+        graph.edges[i].__proto__ = GraphEdge.prototype;
+    }
+    drawGraph();
 }
 
 var onChangeNodeColor = function() {
