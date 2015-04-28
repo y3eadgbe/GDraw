@@ -68,8 +68,7 @@ var Edge = function(id, source, target, directed, width) {
     this.width = width === undefined ? 2 : width;
 
     this.copy = function() {
-        var newObject = new Edge(this.id, this.source, this.target, this.directed, this.width);
-        return newObject;
+        return $.extend(true, {}, this);
     }
 }
 
