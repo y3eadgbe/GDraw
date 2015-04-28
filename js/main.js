@@ -52,7 +52,8 @@ var main = function() {
     $("#btn-redo").click(onRedo);
     $("#btn-export-edge").click(onExportEdge);
     $("#btn-export-svg").click(onExportSVG);
-    $("#node-color").change(onChangeColor);
+    $("#node-color").change(onChangeNodeColor);
+    $("#node-stroke-color").change(onChangeNodeStrokeColor);    
 
     // shortcuts
     shortcut.add("Ctrl+Z", onUndo, {"disable_in_input": true});
@@ -93,6 +94,7 @@ var onSVGMouseDown = function(e) {
         selectedNodeId = [id];
         $('#node-id').val(id);
         $('#node-color').val(graph.getNodeColor(id));
+        $('#node-stroke-color').val(graph.getNodeStrokeColor(id));
     }
 };
 
@@ -163,8 +165,7 @@ var onExportSVG = function() {
     $("#textarea").val(getSVGString());
 }
 
-var onChangeColor = function() {
-    
+var onChangeNodeColor = function() {
     for(var i = 0; i < selectedNodeId.length; ++i) {
         graph.setNodeColor(selectedNodeId[i], $("#node-color").val());
     }
@@ -173,6 +174,17 @@ var onChangeColor = function() {
         graph.commit();
     }
 }
+
+var onChangeNodeStrokeColor = function() {
+    for(var i = 0; i < selectedNodeId.length; ++i) {
+        graph.setNodeStrokeColor(selectedNodeId[i], $("#node-stroke-color").val());
+    }
+    
+    if(selectedNodeId.length > 0) {
+        graph.commit();
+    }
+}
+
 
 var toggleGridMode = function(){
     gridMode = !gridMode;
@@ -339,7 +351,7 @@ var drawGraph = function() {
         .attr("cy", function(d) {return d.value.y;})
         .attr("r", function(d) {return d.value.radius;})
         .attr("stroke-width", function(d) {return d.value.width;})
-        .attr("stroke", "black")
+        .attr("stroke", function(d){return d.value.strokeColor;})
         .attr("stroke-opacity", 1)
         .attr("fill", function(d){return d.value.color;})
         .attr("fill-opacity", 1)

@@ -15,32 +15,34 @@ var Graph = function(onChanged) {
 
 Graph.prototype = {
 // public
-    constructor:     Graph,                // Graph(onChanged)
-    addNode:         GraphAddNode,         // addNode(x, y, radius, width)
-    deleteNode:      GraphDeleteNode,      // deleteNode(id)
-    setNodePosition: GraphSetNodePosition, // setNodePosition(x, y)
-    setNodeRadius:   GraphSetNodeRadius,   // setNodeRadius(id, radius)
-    setNodeWidth:    GraphSetNodeWidth,    // setNodeWidth(id, width)
-    setNodeColor:    GraphSetNodeColor,    // setNodeColor(id, color)
-    getNodeColor:    GraphGetNodeColor,    // getNodeColor(id)
-    addEdge:         GraphAddEdge,         // addEdge(source, target, directed, width)
-    deleteEdge:      GraphDeleteEdge,      // deleteEdge(id)
-    setEdgeWidth:    GraphSetEdgeWidth,    // setEdgeWidth(id, width)
-    commit:          GraphCommit,          // commit()
-    undo:            GraphUndo,            // undo()
-    redo:            GraphRedo,            // redo()
-    canUndo:         GraphCanUndo,         // canUndo()
-    canRedo:         GraphCanRedo,         // canRedo()
+    constructor        :Graph,                   //Graph(onChanged)
+    addNode            :GraphAddNode,            //addNode(x,y,radius,width)
+    deleteNode         :GraphDeleteNode,         //deleteNode(id)
+    setNodePosition    :GraphSetNodePosition,    //setNodePosition(x,y)
+    setNodeRadius      :GraphSetNodeRadius,      //setNodeRadius(id,radius)
+    setNodeWidth       :GraphSetNodeWidth,       //setNodeWidth(id,width)
+    setNodeColor       :GraphSetNodeColor,       //setNodeColor(id,color)
+    getNodeColor       :GraphGetNodeColor,       //getNodeColor(id)
+    setNodeStrokeColor :GraphSetNodeStrokeColor, //setNodeStrokeColor(id,color)
+    getNodeStrokeColor :GraphGetNodeStrokeColor, //getNodeStrokeColor(id)
+    addEdge            :GraphAddEdge,            //addEdge(source,target,directed,width)
+    deleteEdge         :GraphDeleteEdge,         //deleteEdge(id)
+    setEdgeWidth       :GraphSetEdgeWidth,       //setEdgeWidth(id,width)
+    commit             :GraphCommit,             //commit()
+    undo               :GraphUndo,               //undo()
+    redo               :GraphRedo,               //redo()
+    canUndo            :GraphCanUndo,            //canUndo()
+    canRedo            :GraphCanRedo,            //canRedo()
 
 //private
-    _addPatch:       GraphAddPatch,        // addPatch(patch)
-    _undoPatch:      GraphUndoPatch,       // undoPatch(patch)
-    _redoPatch:      GraphRedoPatch        // redoPatch(patch)
+    _addPatch  :GraphAddPatch,  //addPatch(patch)
+    _undoPatch :GraphUndoPatch, //undoPatch(patch)
+    _redoPatch :GraphRedoPatch  //redoPatch(patch)
 };
 
 //-- implementation
 
-var Node = function(id, x, y, radius, width, color) {
+var Node = function(id, x, y, radius, width, color, strokeColor) {
     this.id = id;
     this.x = x === undefined ? 0 : x;
     this.y = y === undefined ? 0 : y;
@@ -51,11 +53,10 @@ var Node = function(id, x, y, radius, width, color) {
     this.radius = radius === undefined ? 20 : radius;
     this.width = width === undefined ? 2 : width;
     this.color = color === undefined ? "white" : color;
+    this.strokeColor = strokeColor === undefined ? "black" : strokeColor;
     
     this.copy = function() {
-        var newObject =
-            new Node(this.id, this.prevx, this.prevy, this.radius, this.width, this.color);
-        return newObject;
+        return $.extend(true, {}, this);
     }
 }
 
@@ -141,9 +142,21 @@ function GraphSetNodeColor(id, color) {
 }
 
 function GraphGetNodeColor(id) {
-    console.log(id);
     return this.nodes[id].color;
 }
+
+function GraphSetNodeStrokeColor(id, color) {
+    var patch = new Patch(UpdateType.NODE_ATTRIBUTE, this.nodes[id].copy(), undefined);
+    this.nodes[id].strokeColor = color;
+    patch.after = this.nodes[id].copy();
+    
+    this._addPatch(patch);
+    this.onChanged();
+}
+
+function GraphGetNodeStrokeColor(id) {
+    return this.nodes[id].strokeColor;
+}    
 
 function GraphDeleteNode(id) {
     var v = this.nodes[id];
