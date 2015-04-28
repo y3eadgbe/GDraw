@@ -392,7 +392,7 @@ var getSVGString = function() {
     var output = "";
     var elements = d3svg.selectAll(".nodes, .edges")[0];
     output += "<?xml version=\"1.0\"?>\n";
-    output += "<svg xmlns=\"http://www.w3.org/2000/svg\">\n";
+    output += "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 800 600\">\n";
     for (var i = 0; i < elements.length; i++) {
         output += "  " + elements[i].outerHTML + "\n";
     }
