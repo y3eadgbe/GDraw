@@ -42,7 +42,7 @@ Graph.prototype = {
 
 //-- implementation
 
-var Node = function(id, x, y, radius, width, color, strokeColor) {
+var GraphNode = function(id, x, y, radius, width, color, strokeColor) {
     this.id = id;
     this.x = x === undefined ? 0 : x;
     this.y = y === undefined ? 0 : y;
@@ -60,7 +60,7 @@ var Node = function(id, x, y, radius, width, color, strokeColor) {
     }
 }
 
-var Edge = function(id, source, target, directed, width) {
+var GraphEdge = function(id, source, target, directed, width) {
     this.id = id;
     this.source = source;
     this.target = target;
@@ -89,7 +89,7 @@ var Patch = function(type, before, after) {
 
 function GraphAddNode(x, y, radius, width) {
     var patch = new Patch(UpdateType.NODE_ADDITION, undefined, undefined);
-    this.nodes[this.nodeItr] = new Node(this.nodeItr, x, y, radius, width);
+    this.nodes[this.nodeItr] = new GraphNode(this.nodeItr, x, y, radius, width);
     this.adjacencyList[this.nodeItr] = new Object();
     patch.after = this.nodes[this.nodeItr].copy();
     
@@ -188,7 +188,7 @@ function GraphAddEdge(source, target, directed, width) {
         this.adjacencyList[target][source] = true;
     }
     
-    this.edges[this.edgeItr] = new Edge(this.edgeItr, source, target, directed, width);
+    this.edges[this.edgeItr] = new GraphEdge(this.edgeItr, source, target, directed, width);
     var patch = new Patch(UpdateType.EDGE_ADDITION, undefined, this.edges[this.edgeItr].copy());
     
     this._addPatch(patch);
