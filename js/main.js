@@ -59,6 +59,9 @@ var main = function() {
     shortcut.add("Ctrl+Z", onUndo, {"disable_in_input": true});
     shortcut.add("Ctrl+Y", onRedo, {"disable_in_input": true});
     shortcut.add("G", toggleGridMode, {"disable_in_input": true});
+    shortcut.add("Z", function(){setEditMode(Mode.DRAW)}, {"disable_in_input": true});
+    shortcut.add("X", function(){setEditMode(Mode.EDIT)}, {"disable_in_input": true});
+    shortcut.add("C", function(){setEditMode(Mode.DELETE)}, {"disable_in_input": true});
     
     Module.loadModel();
 
