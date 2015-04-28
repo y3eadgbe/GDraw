@@ -52,6 +52,7 @@ var main = function() {
     $("#btn-redo").click(onRedo);
     $("#btn-export-edge").click(onExportEdge);
     $("#btn-export-svg").click(onExportSVG);
+    $("#btn-export-json").click(onExportJSON);
     $("#node-color").change(onChangeNodeColor);
     $("#node-stroke-color").change(onChangeNodeStrokeColor);    
 
@@ -166,6 +167,10 @@ var onExportEdge = function() {
 
 var onExportSVG = function() {
     $("#textarea").val(getSVGString());
+}
+
+var onExportJSON = function() {
+    $("#textarea").val(getJSONString());
 }
 
 var onChangeNodeColor = function() {
@@ -398,6 +403,18 @@ var getSVGString = function() {
     }
     output += "</svg>\n";
     return output;
+}
+
+var getJSONString = function() {
+    var JSONobj = {
+        nodes : graph.nodes,
+        edges : graph.edges,
+        adjacencyList : graph.adjacencyList,
+        nodeItr : graph.nodeItr,
+        edgeItr : graph.edgeItr,
+    };
+
+    return JSON.stringify(JSONobj);
 }
 
 var getEdgeListString = function() {
