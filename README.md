@@ -16,6 +16,11 @@ A graph editor & visualizor for web browsers. (http://y3eadgbe.github.io/GDraw/)
 Supported file formats are:
  * Edge List
  * SVG
+ * JSON
+
+##### Import
+Supported file formats are:
+ * JSON
 
 ## License
 This software is distributed under the [MIT license][MIT].
