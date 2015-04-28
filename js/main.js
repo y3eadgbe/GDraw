@@ -57,6 +57,7 @@ var main = function() {
     // shortcuts
     shortcut.add("Ctrl+Z", onUndo, {"disable_in_input": true});
     shortcut.add("Ctrl+Y", onRedo, {"disable_in_input": true});
+    shortcut.add("G", toggleGridMode, {"disable_in_input": true});
     
     Module.loadModel();
 
@@ -171,6 +172,10 @@ var onChangeColor = function() {
     if(selectedNodeId.length > 0) {
         graph.commit();
     }
+}
+
+var toggleGridMode = function(){
+    gridMode = !gridMode;
 }
 
 var addShape = function(shape) {
