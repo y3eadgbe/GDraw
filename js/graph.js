@@ -54,8 +54,10 @@ var GraphNode = function(id, x, y, radius, width, color, strokeColor) {
     this.width = width === undefined ? 2 : width;
     this.color = color === undefined ? "white" : color;
     this.strokeColor = strokeColor === undefined ? "black" : strokeColor;
-    
-    this.copy = function() {
+}
+
+GraphNode.prototype = {
+    copy : function(){
         var obj = $.extend(true, {}, this);
         obj.x = obj.prevx;
         obj.y = obj.prevy;
@@ -71,8 +73,10 @@ var GraphEdge = function(id, source, target, directed, width) {
     this.target = target;
     this.directed = directed;
     this.width = width === undefined ? 2 : width;
+}
 
-    this.copy = function() {
+GraphEdge.prototype = {
+    copy : function() {
         return $.extend(true, {}, this);
     }
 }
@@ -97,7 +101,7 @@ function GraphAddNode(x, y, radius, width) {
     this.nodes[this.nodeItr] = new GraphNode(this.nodeItr, x, y, radius, width);
     this.adjacencyList[this.nodeItr] = new Object();
     patch.after = this.nodes[this.nodeItr].copy();
-    
+
     this._addPatch(patch);
     this.onChanged();
     return this.nodeItr++;
@@ -140,7 +144,7 @@ function GraphSetNodeColor(id, color) {
     var patch = new Patch(UpdateType.NODE_ATTRIBUTE, this.nodes[id].copy(), undefined);
     this.nodes[id].color = color;
     patch.after = this.nodes[id].copy();
-    
+
     this._addPatch(patch);
     this.onChanged();
 }
@@ -153,25 +157,25 @@ function GraphSetNodeStrokeColor(id, color) {
     var patch = new Patch(UpdateType.NODE_ATTRIBUTE, this.nodes[id].copy(), undefined);
     this.nodes[id].strokeColor = color;
     patch.after = this.nodes[id].copy();
-    
+
     this._addPatch(patch);
     this.onChanged();
 }
 
 function GraphGetNodeStrokeColor(id) {
     return this.nodes[id].strokeColor;
-}    
+}
 
 function GraphDeleteNode(id) {
     var v = this.nodes[id];
     if (v === undefined) return;
     var patch = new Patch(UpdateType.NODE_DELETION, v.copy(), undefined);
-    
+
     for (var i in this.edges) {
         var e = this.edges[i];
         if (e.source == id || e.target == id) this.deleteEdge(i, true);
     }
-    
+
     delete this.nodes[id];
     delete this.adjacencyList[id];
 
@@ -182,7 +186,7 @@ function GraphDeleteNode(id) {
 function GraphAddEdge(source, target, directed, width) {
     if (this.nodes[source] === undefined || this.nodes[target] === undefined) return;
     directed = directed === undefined ? false : directed;
-    
+
     if (directed) {
         if (this.adjacencyList[source][target] !== undefined) return;
         this.adjacencyList[source][target] = true;
@@ -192,10 +196,10 @@ function GraphAddEdge(source, target, directed, width) {
         this.adjacencyList[source][target] = true;
         this.adjacencyList[target][source] = true;
     }
-    
+
     this.edges[this.edgeItr] = new GraphEdge(this.edgeItr, source, target, directed, width);
     var patch = new Patch(UpdateType.EDGE_ADDITION, undefined, this.edges[this.edgeItr].copy());
-    
+
     this._addPatch(patch);
     this.onChanged();
     return this.edgeItr++;
@@ -214,14 +218,14 @@ function GraphDeleteEdge(id, suppressCallBack) {
     var e = this.edges[id];
     if (e === undefined) return;
     var patch = new Patch(UpdateType.EDGE_DELETION, e.copy(), undefined);
-    
+
     if (e.directed) {
         delete this.adjacencyList[e.source][e.target];
     } else {
         delete this.adjacencyList[e.source][e.target];
         delete this.adjacencyList[e.target][e.source];
     }
-    
+
     delete this.edges[id];
 
     this._addPatch(patch);
@@ -255,11 +259,11 @@ function GraphRedo() {
     this.undoStack.push(e);
     this.onChanged();
 }
- 
+
 function GraphCanUndo() {
     return this.undoStack.length > 0;
 }
-   
+
 function GraphCanRedo() {
     return this.redoStack.length > 0;
 }
@@ -371,5 +375,6 @@ function GraphRedoPatch(patch) {
 
 //-- exports
 win.Graph = Graph;
-
+win.GraphNode = GraphNode;
+win.GraphEdge = GraphEdge;
 })(window);
