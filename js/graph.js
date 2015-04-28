@@ -56,7 +56,12 @@ var GraphNode = function(id, x, y, radius, width, color, strokeColor) {
     this.strokeColor = strokeColor === undefined ? "black" : strokeColor;
     
     this.copy = function() {
-        return $.extend(true, {}, this);
+        var obj = $.extend(true, {}, this);
+        obj.x = obj.prevx;
+        obj.y = obj.prevy;
+        obj.vx = obj.prevx;
+        obj.vy = obj.prevy;
+        return obj;
     }
 }
 
