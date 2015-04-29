@@ -11,7 +11,7 @@ var d3svg;
 var graph;
 var mouseX = 0, mouseY = 0;
 var dragging = false;
-var mousePath = []
+var mousePath = [];
 var editMode = Mode.DRAW;
 var gridMode = false;
 var nodeToFront = true;
@@ -45,9 +45,9 @@ var main = function() {
     svg.bind("touchmove", onSVGMouseMove); 
     svg.bind("touchend", onSVGMouseUp); 
 
-    $("#btn-draw").click(function(){setEditMode(Mode.DRAW)});
-    $("#btn-edit").click(function(){setEditMode(Mode.EDIT)});
-    $("#btn-delete").click(function(){setEditMode(Mode.DELETE)});
+    $("#btn-draw").click(function(){setEditMode(Mode.DRAW);});
+    $("#btn-edit").click(function(){setEditMode(Mode.EDIT);});
+    $("#btn-delete").click(function(){setEditMode(Mode.DELETE);});
     $("#btn-undo").click(onUndo);
     $("#btn-redo").click(onRedo);
     $("#btn-export-edge").click(onExportEdge);
@@ -61,14 +61,14 @@ var main = function() {
     shortcut.add("Ctrl+Z", onUndo, {"disable_in_input": true});
     shortcut.add("Ctrl+Y", onRedo, {"disable_in_input": true});
     shortcut.add("G", toggleGridMode, {"disable_in_input": true});
-    shortcut.add("Z", function(){setEditMode(Mode.DRAW)}, {"disable_in_input": true});
-    shortcut.add("X", function(){setEditMode(Mode.EDIT)}, {"disable_in_input": true});
-    shortcut.add("C", function(){setEditMode(Mode.DELETE)}, {"disable_in_input": true});
+    shortcut.add("Z", function(){setEditMode(Mode.DRAW);}, {"disable_in_input": true});
+    shortcut.add("X", function(){setEditMode(Mode.EDIT);}, {"disable_in_input": true});
+    shortcut.add("C", function(){setEditMode(Mode.DELETE);}, {"disable_in_input": true});
     
     Module.loadModel();
 
     setEditMode(Mode.DRAW);
-}
+};
 
 var onSVGMouseDown = function(e) {
     e.preventDefault();
@@ -111,7 +111,7 @@ var onSVGMouseMove = function(e) {
         mousePath.push([mouseX, mouseY]);
         drawLocus();
     }
-}
+};
 
 var onSVGMouseUp = function(e) {
     d3svg.selectAll("path").filter(".locus").remove();
@@ -131,7 +131,7 @@ var onSVGMouseUp = function(e) {
 
     mousePath = [];
     dragging = false;
-}
+};
 
 var setEditMode = function(mode) {
     editMode = mode;
@@ -152,27 +152,27 @@ var setEditMode = function(mode) {
         break;
     }
     activeElement.addClass("active");
-}
+};
 
 var onUndo = function() {
     graph.undo();
-}
+};
 
 var onRedo = function() {
     graph.redo();
-}
+};
 
 var onExportEdge = function() {
     $("#textarea").val(getEdgeListString());
-}
+};
 
 var onExportSVG = function() {
     $("#textarea").val(getSVGString());
-}
+};
 
 var onExportJSON = function() {
     $("#textarea").val(getJSONString());
-}
+};
 
 var onImportJSON = function() {
     var JSONobj = JSON.parse($("#textarea").val());
@@ -194,7 +194,7 @@ var onImportJSON = function() {
         graph.edges[i].__proto__ = GraphEdge.prototype;
     }
     drawGraph();
-}
+};
 
 var onChangeNodeColor = function() {
     for(var i = 0; i < selectedNodeId.length; ++i) {
@@ -204,7 +204,7 @@ var onChangeNodeColor = function() {
     if(selectedNodeId.length > 0) {
         graph.commit();
     }
-}
+};
 
 var onChangeNodeStrokeColor = function() {
     for(var i = 0; i < selectedNodeId.length; ++i) {
@@ -214,12 +214,12 @@ var onChangeNodeStrokeColor = function() {
     if(selectedNodeId.length > 0) {
         graph.commit();
     }
-}
+};
 
 
 var toggleGridMode = function(){
     gridMode = !gridMode;
-}
+};
 
 var addShape = function(shape) {
     var sid = getNodeIdFromPosition(shape.x1, shape.y1);
@@ -246,7 +246,7 @@ var addShape = function(shape) {
         break;
     }
     graph.commit();
-}
+};
 
 var getNodeIdFromPosition = function(x, y) {
     var ans = -1;
@@ -257,7 +257,7 @@ var getNodeIdFromPosition = function(x, y) {
     }
 
     return ans;
-}
+};
 
 var getEdgeIdFromPosition = function(x, y) {
     var ans = -1;
@@ -279,7 +279,7 @@ var getEdgeIdFromPosition = function(x, y) {
     }
     console.log(ans);
     return ans;
-}
+};
 
 var drawLocus = function() {
     if (editMode !== Mode.DRAW) return;
@@ -300,7 +300,7 @@ var drawLocus = function() {
         .attr("stroke", "red")
         .attr("stroke-opacity", 0.7)
         .attr("fill", "none");
-}
+};
 
 var onGraphChanged = function() {
     drawGraph();
@@ -315,7 +315,7 @@ var onGraphChanged = function() {
     } else {
         $("#btn-redo").addClass("invalid");
     }
-}
+};
 
 var drawGraph = function() {
     var g = graph;
@@ -339,7 +339,7 @@ var drawGraph = function() {
         var dy = tv.y - sv.y;
         var scale = (sv.radius + sv.width / 2) / Math.max(1.0, Math.sqrt(dx * dx + dy * dy));
         return {v : sv, x : dx * scale, y : dy * scale};
-    }
+    };
 
     lines.attr({
         "class" : "edges",
@@ -360,7 +360,7 @@ var drawGraph = function() {
             return t.v.y + t.y;
         },
         "stroke-width" : function(d) {return d.value.width;},
-        "stroke" : "black",
+        "stroke" : "black"
     });
     
     //lines.order();
@@ -414,7 +414,7 @@ var drawGraph = function() {
                 return a.key > b.key ? 1 : -1;
             });
     }
-}
+};
 
 var getSVGString = function() {
     var output = "";
@@ -426,7 +426,7 @@ var getSVGString = function() {
     }
     output += "</svg>\n";
     return output;
-}
+};
 
 var getJSONString = function() {
     var JSONobj = {
@@ -434,11 +434,11 @@ var getJSONString = function() {
         edges : graph.edges,
         adjacencyList : graph.adjacencyList,
         nodeItr : graph.nodeItr,
-        edgeItr : graph.edgeItr,
+        edgeItr : graph.edgeItr
     };
 
     return JSON.stringify(JSONobj);
-}
+};
 
 var getEdgeListString = function() {
     var edges = graph.edges;
@@ -460,7 +460,7 @@ var getEdgeListString = function() {
     }
     
     var output = "";
-    output += "#" + (directed ? "Directed" : "Undirected") + " graph\n"
+    output += "#" + (directed ? "Directed" : "Undirected") + " graph\n";
     output += "#Nodes: " + Object.keys(graph.nodes).length.toString() + "\n";
     output += "#Edges: " + Object.keys(graph.edges).length.toString() + "\n";
     for (var i in edges) {
@@ -477,7 +477,7 @@ var getEdgeListString = function() {
         }
     }
     return output;
-}
+};
 
 window.onload = main;
 

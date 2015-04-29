@@ -11,7 +11,7 @@ var Graph = function(onChanged) {
     this.undoStack = [];
     this.redoStack = [];
     this.changeList = [];
-}
+};
 
 Graph.prototype = {
 // public
@@ -54,7 +54,7 @@ var GraphNode = function(id, x, y, radius, width, color, strokeColor) {
     this.width = width === undefined ? 2 : width;
     this.color = color === undefined ? "white" : color;
     this.strokeColor = strokeColor === undefined ? "black" : strokeColor;
-}
+};
 
 GraphNode.prototype = {
     copy : function(){
@@ -65,7 +65,7 @@ GraphNode.prototype = {
         obj.vy = obj.prevy;
         return obj;
     }
-}
+};
 
 var GraphEdge = function(id, source, target, directed, width) {
     this.id = id;
@@ -73,13 +73,13 @@ var GraphEdge = function(id, source, target, directed, width) {
     this.target = target;
     this.directed = directed;
     this.width = width === undefined ? 2 : width;
-}
+};
 
 GraphEdge.prototype = {
     copy : function() {
         return $.extend(true, {}, this);
     }
-}
+};
 
 var UpdateType = {
     NODE_ADDITION  : 0,
@@ -94,7 +94,7 @@ var Patch = function(type, before, after) {
     this.type = type;
     this.before = before;
     this.after = after;
-}
+};
 
 function GraphAddNode(x, y, radius, width) {
     var patch = new Patch(UpdateType.NODE_ADDITION, undefined, undefined);
@@ -325,8 +325,8 @@ function GraphUndoPatch(patch) {
 function GraphRedoPatch(patch) {
     switch (patch.type) {
     case UpdateType.NODE_ADDITION:
-        var node = patch.after
-        var id = node.id
+        var node = patch.after;
+        var id = node.id;
         this.nodes[id] = node.copy();
         this.adjacencyList[id] = new Object();
         this.nodeItr++;
