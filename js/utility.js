@@ -1,3 +1,7 @@
+/*
+ * Math Functions
+ */
+
 var EPS = 1e-9;
 
 var dot = function(p, q) {
@@ -21,4 +25,17 @@ var distanceSP = function(a, b, p) {
     if (dot(minus(a, b), minus(p, b)) < EPS) return abs(minus(b, p));
     console.log(abs(minus(b, a)));
     return Math.abs(cross(minus(b, a), minus(p, a))) / abs(minus(b, a));
+}
+
+/*
+ * Utilities
+ */
+
+var downloadText = function(fileName, text) {
+    var blob = new Blob([text], {type: "text/plain"});
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.target = "_blank";
+    a.download = fileName;
+    a.click();
 }
