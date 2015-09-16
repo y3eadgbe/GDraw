@@ -22,3 +22,78 @@ var distanceSP = function(a, b, p) {
     console.log(abs(minus(b, a)));
     return Math.abs(cross(minus(b, a), minus(p, a))) / abs(minus(b, a));
 }
+
+var HSVtoRGB = function(hsv) {
+    var h = hsv[0];
+    var s = hsv[1];
+    var v = hsv[2];
+    var c = v * s;
+
+    var hp = h / 60.0;
+    var x = c * (1 - Math.abs(hp % 2 - 1));
+
+    var ans = [v - c, v - c, v - c];
+    if (hp < 1) {
+        ans[0] += c;
+        ans[1] += x;
+    } else if (hp < 2) {
+        ans[0] += x;
+        ans[1] += c;
+    } else if (hp < 3) {
+        ans[1] += c;
+        ans[2] += x;
+    } else if (hp < 4) {
+        ans[1] += x;
+        ans[2] += c;
+    } else if (hp < 5) {
+        ans[0] += x;
+        ans[2] += c;
+    } else {
+        ans[0] += c;
+        ans[2] += x;
+    }
+
+    for (var i = 0; i < 3; i++) {
+        ans[i] *= 255;
+    }
+
+    return ans;
+}
+
+var getColormapJet = function(n) {
+    n = n === undefined ? 32 : n;
+    var ans = [];
+    for (var i = 0; i < n; i++) {
+        ans.push(HSVtoRGB([240 * (1.0 - (i / (n - 1))) ,0.6, 0.8]));
+    }
+    return ans;
+}
+
+var getColormapGray = function(n) {
+    n = n === undefined ? 32 : n;
+    var ans = [];
+    for (var i = 0; i < n; i++) {
+        ans.push(HSVtoRGB([0, 0, 1.0 - (i / (n - 1))]));
+    }
+    return ans;
+}
+
+var setNodeColorByColorMap = function(graph, values, colorMap) {
+    colorMap = colorMap === undefined ? getColorMapJet() : colorMap;
+    if (values.length == 0) return;
+    console.log(colorMap);
+
+    var N = colorMap.length;
+    var valueArray = Object.keys(values).map(function (key) {return values[key]});
+    var valueMax = Math.max.apply(null, valueArray);
+    var valueMin = Math.min.apply(null, valueArray);
+
+    for (var key in values) {
+        var v = (values[key] - valueMin) / (valueMax - valueMin);
+        var index = Math.floor(v * N);
+        if (index == N) index--;
+        console.log(colorMap[index]);
+        graph.setNodeColor(key, d3.rgb(colorMap[index][0], colorMap[index][1], colorMap[index][2]).toString());
+    }
+    graph.commit();
+}
