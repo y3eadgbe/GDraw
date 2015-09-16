@@ -78,20 +78,22 @@ var getColormapGray = function(n) {
     return ans;
 }
 
-var setNodeColorByColorMap = function(graph, values, colorMap) {
-    colorMap = colorMap === undefined ? getColorMapJet() : colorMap;
+var setNodeColorByColorMap = function(graph, values, valueMin, valueMax, colorMap) {
+    colorMap = colorMap === undefined ? getColormapJet() : colorMap;
     if (values.length == 0) return;
     console.log(colorMap);
 
     var N = colorMap.length;
     var valueArray = Object.keys(values).map(function (key) {return values[key]});
-    var valueMax = Math.max.apply(null, valueArray);
-    var valueMin = Math.min.apply(null, valueArray);
+    valueMax = valueMax === undefined ? Math.max.apply(null, valueArray) : valueMax;
+    valueMin = valueMin === undefined ? Math.min.apply(null, valueArray) : valueMin;
+    if (valueMin > valueMax) valueMax = valueMin;
 
     for (var key in values) {
-        var v = (values[key] - valueMin) / (valueMax - valueMin);
+        var v = valueMax - valueMin === 0 ? 0 : (values[key] - valueMin) / (valueMax - valueMin);
         var index = Math.floor(v * N);
-        if (index == N) index--;
+        if (index >= N) index = N - 1;
+        if (index < 0) index = 0;
         console.log(colorMap[index]);
         graph.setNodeColor(key, d3.rgb(colorMap[index][0], colorMap[index][1], colorMap[index][2]).toString());
     }

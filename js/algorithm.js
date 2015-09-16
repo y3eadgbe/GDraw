@@ -26,7 +26,6 @@ var closenessCentrality = function(graph) {
         ans[key] = 0;
     }
     if (N <= 1) return ans;
-    if (!isConnected(graph)) return ans;
 
     for (var key in graph.nodes) {
         var queue = [];
@@ -40,7 +39,7 @@ var closenessCentrality = function(graph) {
             var cost = e[1];
             if (visited[v] == true) continue;
             visited[v] = true;
-            ans[key] += cost;
+            if (v != key) ans[key] += 1.0 / cost;
             
             targets = Object.keys(graph.adjacencyList[v]);
             for (var u in targets) {
@@ -50,7 +49,7 @@ var closenessCentrality = function(graph) {
     }
 
     for (var key in ans) {
-        ans[key] = 1.0 / ans[key];
+        ans[key] /= N - 1;
     }
     return ans;
 }
