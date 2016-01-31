@@ -250,15 +250,15 @@ var onRedo = function() {
 };
 
 var onExportEdge = function() {
-    $("#textarea").val(getEdgeListString());
+    downloadText("out.txt", getEdgeString());
 };
 
 var onExportSVG = function() {
-    $("#textarea").val(getSVGString());
+    downloadText("out.svg", getSVGString());
 };
 
 var onExportJSON = function() {
-    $("#textarea").val(getJSONString());
+    downloadText("out.json", getJSONString());
 };
 
 var onImportJSON = function() {
