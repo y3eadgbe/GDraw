@@ -52,8 +52,8 @@ var GraphNode = function(id, x, y, radius, width, color, strokeColor) {
     this.prevy = this.y;
     this.radius = radius === undefined ? 20 : radius;
     this.width = width === undefined ? 2 : width;
-    this.color = color === undefined ? "white" : color;
-    this.strokeColor = strokeColor === undefined ? "black" : strokeColor;
+    this.color = color === undefined ? "#ffffff" : color;
+    this.strokeColor = strokeColor === undefined ? "#000000" : strokeColor;
 };
 
 GraphNode.prototype = {

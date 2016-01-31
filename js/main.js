@@ -4,6 +4,17 @@ var Mode = {
     DELETE : 2
 };
 
+var ObjectType = {
+    NONE   : 0,
+    VERTEX : 1,
+    EDGE   : 2
+};
+
+var GraphObject = function(type, id) {
+    this.type = type;
+    this.id = id;
+};
+
 var gridWidth = 20;
 
 var svg;
@@ -11,11 +22,14 @@ var d3svg;
 var graph;
 var mouseX = 0, mouseY = 0;
 var dragging = false;
+var movedAfterMouseDown = false;
 var mousePath = [];
-var editMode = Mode.DRAW;
+var editMode = Mode.EDIT;
 var gridMode = false;
 var nodeToFront = true;
-var selectedNodeId = [];
+var selectedNodes = [];
+var nodeClicked = -1;
+var clickedWithShift = false;
 
 var main = function() {
     svg = $("#main-svg");
@@ -55,7 +69,7 @@ var main = function() {
     $("#btn-export-json").click(onExportJSON);
     $("#btn-import-json").click(onImportJSON);
     $("#node-color").change(onChangeNodeColor);
-    $("#node-stroke-color").change(onChangeNodeStrokeColor);    
+    $("#node-stroke-color").change(onChangeNodeStrokeColor);
 
     // shortcuts
     shortcut.add("Ctrl+Z", onUndo, {"disable_in_input": true});
@@ -70,46 +84,103 @@ var main = function() {
     setEditMode(Mode.DRAW);
 };
 
+var modifySelectedNodesOnMouseDown = function(id, shift) {
+    var pos = selectedNodes.indexOf(id);
+    nodeClicked = id;
+    if (shift) {
+        clickedWithShift = true;
+        if (pos === -1) {
+            selectedNodes.push(id);
+            nodeClicked = -1;
+        }
+    } else {
+        clickedWithShift = false;
+        if (pos === -1) {
+            selectedNodes = [id];
+            nodeClicked = -1;
+        }
+    }
+
+    drawSelectedNodes();
+    $('#node-id').text(id);
+    $('#node-color').val(graph.getNodeColor(id));
+    $('#node-stroke-color').val(graph.getNodeStrokeColor(id));
+};
+
+var modifySelectedNodesOnMouseUp = function() {
+    if (nodeClicked === -1) return;
+    if (movedAfterMouseDown) return;
+    if (clickedWithShift) {
+        var pos = selectedNodes.indexOf(nodeClicked);
+        selectedNodes.splice(pos, 1);
+    } else {
+        selectedNodes = [nodeClicked];
+    }
+}
+
+var clearSelectedNodes = function() {
+    selectedNodes = [];
+    drawSelectedNodes();
+};
+
 var onSVGMouseDown = function(e) {
     e.preventDefault();
     dragging = true;
+    movedAfterMouseDown = false;
+
+    var obj = getObjectFromPosition(mouseX, mouseY);
+
     switch (editMode) {
     case Mode.DRAW:
         mousePath = [[mouseX, mouseY]];
         break;
-    case Mode.DELETE:
-        var id = getNodeIdFromPosition(mouseX, mouseY);
-        if (id !== -1) {
-            graph.deleteNode(id);
-            graph.commit();
+    case Mode.EDIT:
+        if (obj.type === ObjectType.VERTEX) {
+            modifySelectedNodesOnMouseDown(obj.id, e.shiftKey);
         } else {
-            id = getEdgeIdFromPosition(mouseX, mouseY);
-            if (id !== -1) {
-                graph.deleteEdge(id);
-                graph.commit();
-            }
+            clearSelectedNodes();
         }
         break;
-    default:
+    case Mode.DELETE:
+        switch (obj.type) {
+        case ObjectType.VERTEX:
+            graph.deleteNode(obj.id);
+            graph.commit();
+            break;
+        case ObjectType.EDGE:
+            graph.deleteEdge(obj.id);
+            graph.commit();
+            break;
+        }
         break;
-    }
-    
-    var id = getNodeIdFromPosition(mouseX, mouseY);
-    if(id !== -1){
-        selectedNodeId = [id];
-        $('#node-id').val(id);
-        $('#node-color').val(graph.getNodeColor(id));
-        $('#node-stroke-color').val(graph.getNodeStrokeColor(id));
-    }
+    }    
 };
 
 var onSVGMouseMove = function(e) {
+    movedAfterMouseDown = true;
     var boundingBox = svg[0].getBoundingClientRect();
+    var dx = e.clientX - boundingBox.left - mouseX;
+    var dy = e.clientY - boundingBox.top - mouseY;
     mouseX = e.clientX - boundingBox.left;
     mouseY = e.clientY - boundingBox.top;
     if (dragging && editMode === Mode.DRAW) {
         mousePath.push([mouseX, mouseY]);
         drawLocus();
+    }
+    if (dragging && editMode === Mode.EDIT) {
+        for (var i = 0; i < selectedNodes.length; i++) {
+            var node = graph.nodes[selectedNodes[i]];
+            node.vx += dx;
+            node.vy += dy;
+            if (gridMode) {
+                node.x = Math.round(node.vx / gridWidth) * gridWidth;
+                node.y = Math.round(node.vy / gridWidth) * gridWidth;
+            } else {
+                node.x = node.vx;
+                node.y = node.vy;
+            }
+            drawGraph();
+        }
     }
 };
 
@@ -128,12 +199,26 @@ var onSVGMouseUp = function(e) {
         addShape(shape);
         console.log(shape);
     }
-
+    
     mousePath = [];
+    if (movedAfterMouseDown && editMode === Mode.EDIT) {
+        for (var i = 0; i < selectedNodes.length; i++) {
+            var node = graph.nodes[selectedNodes[i]];
+            node.vx = node.x;
+            node.vy = node.y;
+            graph.setNodePosition(selectedNodes[i], node.x, node.y);
+            graph.commit();
+        }
+    }
+
     dragging = false;
+    if (editMode === Mode.EDIT) {
+        modifySelectedNodesOnMouseUp(movedAfterMouseDown);
+    }
 };
 
 var setEditMode = function(mode) {
+    if (editMode === mode) return;
     editMode = mode;
     $(".edit-mode").removeClass("active");
 
@@ -141,12 +226,14 @@ var setEditMode = function(mode) {
     switch (mode) {
     case Mode.DRAW:
         activeElement = $("#btn-draw");
+        clearSelectedNodes();
         break;
     case Mode.EDIT:
         activeElement = $("#btn-edit");
         break;
     case Mode.DELETE:
         activeElement = $("#btn-delete");
+        clearSelectedNodes();
         break;
     default:
         break;
@@ -185,33 +272,34 @@ var onImportJSON = function() {
     graph.undoStack = [];
     graph.redoStack = [];
     graph.changeList = [];
+    selectedNodes = [];
 
-    for(var i in graph.nodes) {
+    for (var i in graph.nodes) {
         graph.nodes[i].__proto__ = GraphNode.prototype;
     }
 
-    for(var i in graph.edges) {
+    for (var i in graph.edges) {
         graph.edges[i].__proto__ = GraphEdge.prototype;
     }
     drawGraph();
 };
 
 var onChangeNodeColor = function() {
-    for(var i = 0; i < selectedNodeId.length; ++i) {
-        graph.setNodeColor(selectedNodeId[i], $("#node-color").val());
+    for (var i = 0; i < selectedNodes.length; ++i) {
+        graph.setNodeColor(selectedNodes[i], $("#node-color").val());
     }
     
-    if(selectedNodeId.length > 0) {
+    if (selectedNodes.length > 0) {
         graph.commit();
     }
 };
 
 var onChangeNodeStrokeColor = function() {
-    for(var i = 0; i < selectedNodeId.length; ++i) {
-        graph.setNodeStrokeColor(selectedNodeId[i], $("#node-stroke-color").val());
+    for (var i = 0; i < selectedNodes.length; ++i) {
+        graph.setNodeStrokeColor(selectedNodes[i], $("#node-stroke-color").val());
     }
     
-    if(selectedNodeId.length > 0) {
+    if (selectedNodes.length > 0) {
         graph.commit();
     }
 };
@@ -224,7 +312,6 @@ var toggleGridMode = function(){
 var addShape = function(shape) {
     var sid = getNodeIdFromPosition(shape.x1, shape.y1);
     var tid = getNodeIdFromPosition(shape.x2, shape.y2);
-    console.log([sid, tid]);
     
     switch (shape.shape) {
     case Module.Shape.CIRCLE:
@@ -247,6 +334,25 @@ var addShape = function(shape) {
     }
     graph.commit();
 };
+
+var getObjectFromPosition = function(x, y) {
+    var obj = new GraphObject(ObjectType.NONE, -1);
+    var id = getNodeIdFromPosition(x, y);
+    if (id !== -1) {
+        obj.type = ObjectType.VERTEX;
+        obj.id = id;
+        return obj;
+    }
+
+    id = getEdgeIdFromPosition(x, y);
+    if (id !== -1) {
+        obj.type = ObjectType.EDGE;
+        obj.id = id;
+        return obj;
+    }
+
+    return obj;
+}
 
 var getNodeIdFromPosition = function(x, y) {
     var ans = -1;
@@ -272,12 +378,9 @@ var getEdgeIdFromPosition = function(x, y) {
         var y1 = sv.y + dy / length * (sv.radius + sv.width / 2);
         var x2 = tv.x - dx / length * (sv.radius + sv.width / 2);
         var y2 = tv.y - dy / length * (sv.radius + sv.width / 2);
-        console.log([[x1, y1], [x2, y2], [x, y]]);
         var d = distanceSP([x1, y1], [x2, y2], [x, y]);
         if (d < e.width / 2 + 5.0) ans = e.id;
-        console.log(d);
     }
-    console.log(ans);
     return ans;
 };
 
@@ -300,6 +403,23 @@ var drawLocus = function() {
         .attr("stroke", "red")
         .attr("stroke-opacity", 0.7)
         .attr("fill", "none");
+};
+
+var drawSelectedNodes = function() {
+    var selected = d3svg.selectAll("circle").filter(".selected-nodes").data(selectedNodes.map(function(x) {return graph.nodes[x];}));
+    selected.enter().append("circle");
+    selected.exit().remove();
+    selected.attr("class", "selected-nodes")
+        .attr("cx", function(d) {return d.x;})
+        .attr("cy", function(d) {return d.y;})
+        .attr("r", function(d) {
+            return d.radius + d.width / 2.0 + 2.0;
+        })
+        .attr("stroke-width", 4)
+        .attr("stroke", "royalblue")
+        .attr("stroke-opacity", 0.5)
+        .attr("fill", "none")
+        .attr("pointer-events", "none");
 };
 
 var onGraphChanged = function() {
@@ -385,28 +505,8 @@ var drawGraph = function() {
         .attr("stroke", function(d){return d.value.strokeColor;})
         .attr("stroke-opacity", 1)
         .attr("fill", function(d){return d.value.color;})
-        .attr("fill-opacity", 1)
-        .call(d3.behavior.drag().on("drag", function(d) {
-            if (editMode === Mode.EDIT) {
-                d.value.vx += d3.event.dx;
-                d.value.vy += d3.event.dy;
-                if (gridMode) {
-                    d.value.x = Math.round(d.value.vx / gridWidth) * gridWidth;
-                    d.value.y = Math.round(d.value.vy / gridWidth) * gridWidth;
-                } else {
-                    d.value.x = d.value.vx;
-                    d.value.y = d.value.vy;
-                }
-                drawGraph();
-            }}).on("dragend", function(d) {
-                if (editMode === Mode.EDIT) {
-                    d.value.vx = d.value.x;
-                    d.value.vy = d.value.y;
-                    graph.setNodePosition(d.value.id, d.value.x, d.value.y);
-                    graph.commit();
-                }
-            }));
-
+        .attr("fill-opacity", 1);
+        
     if (nodeToFront) {
         d3svg.selectAll(".nodes, .edges")
             .sort(function(a, b) {
@@ -414,6 +514,8 @@ var drawGraph = function() {
                 return a.key > b.key ? 1 : -1;
             });
     }
+
+    drawSelectedNodes();
 };
 
 var getSVGString = function() {
