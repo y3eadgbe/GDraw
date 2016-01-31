@@ -1,7 +1,8 @@
 var Mode = {
     DRAW   : 0,
     EDIT   : 1,
-    DELETE : 2
+    DELETE : 2,
+    LAYOUT : 3
 };
 
 var ObjectType = {
@@ -17,6 +18,7 @@ var GraphObject = function(type, id) {
 
 var gridWidth = 20;
 
+var canvasWidth = 800, canvasHeight = 600;
 var svg;
 var d3svg;
 var graph;
@@ -30,6 +32,9 @@ var nodeToFront = true;
 var selectedNodes = [];
 var nodeClicked = -1;
 var clickedWithShift = false;
+var layoutTimer;
+var layoutVx = [], layoutVy = [];
+var layoutCvx, layoutCvy;
 
 var main = function() {
     svg = $("#main-svg");
@@ -37,8 +42,8 @@ var main = function() {
     graph = new Graph(onGraphChanged);
 
     // draw grid
-    for (var i = 0; i * gridWidth < 800; i++) {
-        for (var j = 0; j * gridWidth < 600; j++) {
+    for (var i = 0; i * gridWidth < canvasWidth; i++) {
+        for (var j = 0; j * gridWidth < canvasHeight; j++) {
             if ((i + j) % 2 === 1) {
                 d3svg.append("rect")
                     .attr("x", i * gridWidth)
@@ -62,6 +67,7 @@ var main = function() {
     $("#btn-draw").click(function(){setEditMode(Mode.DRAW);});
     $("#btn-edit").click(function(){setEditMode(Mode.EDIT);});
     $("#btn-delete").click(function(){setEditMode(Mode.DELETE);});
+    $("#btn-layout").click(function(){setEditMode(Mode.LAYOUT);});
     $("#btn-undo").click(onUndo);
     $("#btn-redo").click(onRedo);
     $("#btn-export-edge").click(onExportEdge);
@@ -74,10 +80,12 @@ var main = function() {
     // shortcuts
     shortcut.add("Ctrl+Z", onUndo, {"disable_in_input": true});
     shortcut.add("Ctrl+Y", onRedo, {"disable_in_input": true});
+    shortcut.add("Ctrl+A", selectAllNodes, {"disable_in_input": true});
     shortcut.add("G", toggleGridMode, {"disable_in_input": true});
     shortcut.add("Z", function(){setEditMode(Mode.DRAW);}, {"disable_in_input": true});
     shortcut.add("X", function(){setEditMode(Mode.EDIT);}, {"disable_in_input": true});
     shortcut.add("C", function(){setEditMode(Mode.DELETE);}, {"disable_in_input": true});
+    shortcut.add("F", function(){setEditMode(Mode.LAYOUT);}, {"disable_in_input": true});
     
     Module.loadModel();
 
@@ -122,6 +130,77 @@ var clearSelectedNodes = function() {
     selectedNodes = [];
     drawSelectedNodes();
 };
+
+var forceLayout = function() {
+    var cx = 0.0, cy = 0.0;
+    var coulombC = 20000;
+    var hookC = 0.1;
+    var naturalLength = 70;
+    var delta = 0.2;
+    var decay = 0.95;
+    var cameraSpeed = 0.2;
+    var cameraDecay = 0.85;
+
+    for (var i in graph.nodes) {
+        var Fx = 0.0, Fy = 0.0;
+        var u = graph.nodes[i];
+        for (var j in graph.nodes) {
+            if (i === j) continue;
+            var v = graph.nodes[j];
+            var vecx = u.x - v.x;
+            var vecy = u.y - v.y;
+            var dsquare = Math.pow(vecx, 2) + Math.pow(vecy, 2);
+            dsquare = Math.max(4, dsquare);
+            var F = coulombC / dsquare;
+            Fx += F * vecx / Math.sqrt(dsquare);
+            Fy += F * vecy / Math.sqrt(dsquare);
+        }
+        
+        var neighbors = Object.keys(graph.adjacencyList[i]);
+
+        for (var j = 0; j < neighbors.length; j++) {
+            var v = graph.nodes[neighbors[j]];
+            var vecx = v.x - u.x;
+            var vecy = v.y - u.y;
+            var d = Math.sqrt(Math.pow(vecx, 2) + Math.pow(vecy, 2));
+            d = Math.max(2, d);
+            Fx += hookC * vecx * (d - naturalLength) / d;
+            Fy += hookC * vecy * (d - naturalLength) / d;
+        }
+
+        layoutVx[i] += Fx * delta;
+        layoutVy[i] += Fy * delta;
+        layoutVx[i] *= decay;
+        layoutVy[i] *= decay;
+        u.x += layoutVx[i] * delta;
+        u.y += layoutVy[i] * delta;
+        cx += u.x;
+        cy += u.y;
+    }
+    cx /= Object.keys(graph.nodes).length;
+    cy /= Object.keys(graph.nodes).length;
+    layoutCvx += (cx - (canvasWidth / 2.0)) * delta * cameraSpeed;
+    layoutCvy += (cy - (canvasHeight / 2.0)) * delta * cameraSpeed;
+    layoutCvx *= cameraDecay;
+    layoutCvy *= cameraDecay;
+
+    for (var i in graph.nodes) {
+        graph.nodes[i].x -= layoutCvx * delta;
+        graph.nodes[i].y -= layoutCvy * delta;
+    }
+
+    drawGraph();
+}
+
+var selectAllNodes = function() {
+    if (editMode !== Mode.EDIT) return;
+    selectedNodes = []
+    for (var i in graph.nodes) {
+        selectedNodes.push(parseInt(i));
+    }
+    console.log(selectedNodes);
+    drawSelectedNodes();
+}
 
 var onSVGMouseDown = function(e) {
     e.preventDefault();
@@ -207,8 +286,8 @@ var onSVGMouseUp = function(e) {
             node.vx = node.x;
             node.vy = node.y;
             graph.setNodePosition(selectedNodes[i], node.x, node.y);
-            graph.commit();
         }
+        graph.commit();
     }
 
     dragging = false;
@@ -219,6 +298,16 @@ var onSVGMouseUp = function(e) {
 
 var setEditMode = function(mode) {
     if (editMode === mode) return;
+    if (editMode === Mode.LAYOUT) {
+        clearInterval(layoutTimer);
+        for (var i in graph.nodes) {
+            var node = graph.nodes[i];
+            node.vx = node.x;
+            node.vy = node.y;
+            graph.setNodePosition(i, node.x, node.y);
+        }
+        graph.commit();
+    }
     editMode = mode;
     $(".edit-mode").removeClass("active");
 
@@ -235,6 +324,18 @@ var setEditMode = function(mode) {
         activeElement = $("#btn-delete");
         clearSelectedNodes();
         break;
+    case Mode.LAYOUT:
+        activeElement = $("#btn-layout");
+        clearSelectedNodes();
+        layoutVx = new Object();
+        layoutVy = new Object();
+        for (var i in graph.nodes) {
+            layoutVx[i] = 0.0;
+            layoutVy[i] = 0.0;
+        }
+        layoutCvx = 0.0;
+        layoutCvy = 0.0;
+        layoutTimer = setInterval(forceLayout, 16);
     default:
         break;
     }
@@ -242,10 +343,14 @@ var setEditMode = function(mode) {
 };
 
 var onUndo = function() {
+    if (editMode === Mode.LAYOUT) return;
+    clearSelectedNodes();
     graph.undo();
 };
 
 var onRedo = function() {
+    if (editMode === Mode.LAYOUT) return;
+    clearSelectedNodes();
     graph.redo();
 };
 
