@@ -16,6 +16,13 @@
   <div id="wrapper">
     <div id="header">
     </div>
+    <div id="infobar">
+      <div id="node-info">
+        <div id="node-id">ID</div>
+        <input id="node-color" type="text">
+        <input id="node-stroke-color" type="text">
+      </div>
+    </div>
     <div id="canvas">
       <svg id="main-svg" width="800" height="600"></svg>
     </div>
@@ -30,11 +37,6 @@
       <span id="btn-export-svg" class="button">Export(SVG)</span>
       <span id="btn-export-json" class="button">Export(JSON)</span>
       <span id="btn-import-json" class="button">Import(JSON)</span>
-      <div id="node-info">
-        <span id="node-id">ID</span>
-        <input id="node-color" type="text">
-        <input id="node-stroke-color" type="text">
-      </div>
     </div>
     <div id="footer">
       <textarea id="textarea" rows="15" cols="80"></textarea>

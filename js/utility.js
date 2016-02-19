@@ -27,6 +27,20 @@ var distanceSP = function(a, b, p) {
     return Math.abs(cross(minus(b, a), minus(p, a))) / abs(minus(b, a));
 };
 
+var intersectRectCircle = function(ul, lr, c, r) {
+    var left = ul[0], right = lr[0];
+    var top = ul[1], bottom = lr[1];
+    if (abs([left,     top], c) <= r ||
+        abs([left,  bottom], c) <= r ||
+        abs([right,    top], c) <= r ||
+        abs([right, bottom], c) <= r) return true;
+    if (left <= c[0] && c[0] <= right &&
+        top - r <= c[1] && c[1] <= bottom + r) return true;
+    if (left - r <= c[0] && c[0] <= right + r &&
+        top <= c[1] && c[1] <= bottom) return true;
+    return false;
+}
+
 /*
  * Utilities
  */

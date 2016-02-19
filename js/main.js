@@ -24,6 +24,8 @@ var d3svg;
 var graph;
 var mouseX = 0, mouseY = 0;
 var dragging = false;
+var rangeSelectMode = false;
+var dragStartX, dragStartY;
 var movedAfterMouseDown = false;
 var mousePath = [];
 var editMode = Mode.EDIT;
@@ -93,37 +95,65 @@ var main = function() {
 };
 
 var modifySelectedNodesOnMouseDown = function(id, shift) {
-    var pos = selectedNodes.indexOf(id);
-    nodeClicked = id;
-    if (shift) {
-        clickedWithShift = true;
-        if (pos === -1) {
-            selectedNodes.push(id);
-            nodeClicked = -1;
+    if (id === -1) {
+        rangeSelectMode = true;
+        if (!shift) {
+            clearSelectedNodes();
         }
     } else {
-        clickedWithShift = false;
-        if (pos === -1) {
-            selectedNodes = [id];
-            nodeClicked = -1;
+        var pos = selectedNodes.indexOf(id);
+        nodeClicked = id;
+        if (shift) {
+            clickedWithShift = true;
+            if (pos === -1) {
+                selectedNodes.push(id);
+                nodeClicked = -1;
+            }
+        } else {
+            clickedWithShift = false;
+            if (pos === -1) {
+                selectedNodes = [id];
+                nodeClicked = -1;
+            }
         }
-    }
 
-    drawSelectedNodes();
-    $('#node-id').text(id);
-    $('#node-color').val(graph.getNodeColor(id));
-    $('#node-stroke-color').val(graph.getNodeStrokeColor(id));
+        drawSelectedNodes();
+        $('#node-id').text(id);
+        $('#node-color').val(graph.getNodeColor(id));
+        $('#node-stroke-color').val(graph.getNodeStrokeColor(id));
+    }
 };
 
 var modifySelectedNodesOnMouseUp = function() {
-    if (nodeClicked === -1) return;
-    if (movedAfterMouseDown) return;
-    if (clickedWithShift) {
-        var pos = selectedNodes.indexOf(nodeClicked);
-        selectedNodes.splice(pos, 1);
-    } else {
-        selectedNodes = [nodeClicked];
+    if (movedAfterMouseDown) {
+        if (rangeSelectMode) {
+            console.log("poyo");
+            var ul = [Math.min(dragStartX, mouseX), Math.min(dragStartY, mouseY)];
+            var lr = [Math.max(dragStartX, mouseX), Math.max(dragStartY, mouseY)];
+            for (var i in graph.nodes) {
+                var v = graph.nodes[i]
+                var c = [v.x, v.y];
+                var r = v.radius + v.width / 2.0;
+                var index = parseInt(i);
+                if (intersectRectCircle(ul, lr, c, r)) {
+                    var pos = selectedNodes.indexOf(index);
+                    if (pos === -1) {
+                        selectedNodes.push(index);
+                    }
+                }
+            }
+        }
+    } else if (nodeClicked !== -1) {
+        if (clickedWithShift) {
+            var pos = selectedNodes.indexOf(nodeClicked);
+            selectedNodes.splice(pos, 1);
+        } else {
+            selectedNodes = [nodeClicked];
+        }
     }
+    nodeClicked = -1;
+    rangeSelectMode = false;
+    drawSelectedNodes();
 }
 
 var clearSelectedNodes = function() {
@@ -133,9 +163,9 @@ var clearSelectedNodes = function() {
 
 var forceLayout = function() {
     var cx = 0.0, cy = 0.0;
-    var coulombC = 20000;
+    var coulombC = 25000;
     var hookC = 0.1;
-    var naturalLength = 70;
+    var naturalLength = 40;
     var delta = 0.2;
     var decay = 0.95;
     var cameraSpeed = 0.2;
@@ -205,6 +235,8 @@ var selectAllNodes = function() {
 var onSVGMouseDown = function(e) {
     e.preventDefault();
     dragging = true;
+    dragStartX = mouseX;
+    dragStartY = mouseY;
     movedAfterMouseDown = false;
 
     var obj = getObjectFromPosition(mouseX, mouseY);
@@ -217,7 +249,7 @@ var onSVGMouseDown = function(e) {
         if (obj.type === ObjectType.VERTEX) {
             modifySelectedNodesOnMouseDown(obj.id, e.shiftKey);
         } else {
-            clearSelectedNodes();
+            modifySelectedNodesOnMouseDown(-1, e.shiftKey);
         }
         break;
     case Mode.DELETE:
@@ -247,24 +279,29 @@ var onSVGMouseMove = function(e) {
         drawLocus();
     }
     if (dragging && editMode === Mode.EDIT) {
-        for (var i = 0; i < selectedNodes.length; i++) {
-            var node = graph.nodes[selectedNodes[i]];
-            node.vx += dx;
-            node.vy += dy;
-            if (gridMode) {
-                node.x = Math.round(node.vx / gridWidth) * gridWidth;
-                node.y = Math.round(node.vy / gridWidth) * gridWidth;
-            } else {
-                node.x = node.vx;
-                node.y = node.vy;
+        if (rangeSelectMode) {
+            drawRange();
+        } else {
+            for (var i = 0; i < selectedNodes.length; i++) {
+                var node = graph.nodes[selectedNodes[i]];
+                node.vx += dx;
+                node.vy += dy;
+                if (gridMode) {
+                    node.x = Math.round(node.vx / gridWidth) * gridWidth;
+                    node.y = Math.round(node.vy / gridWidth) * gridWidth;
+                } else {
+                    node.x = node.vx;
+                    node.y = node.vy;
+                }
+                drawGraph();
             }
-            drawGraph();
         }
     }
 };
 
 var onSVGMouseUp = function(e) {
     d3svg.selectAll("path").filter(".locus").remove();
+    d3svg.selectAll("rect").filter(".range").remove();
 
     if (mousePath.length > 3 && editMode === Mode.DRAW) {
         var x = new Module.VInt();
@@ -298,6 +335,9 @@ var onSVGMouseUp = function(e) {
 
 var setEditMode = function(mode) {
     if (editMode === mode) return;
+    d3svg.selectAll("path").filter(".locus").remove();
+    d3svg.selectAll("rect").filter(".range").remove();
+
     if (editMode === Mode.LAYOUT) {
         clearInterval(layoutTimer);
         for (var i in graph.nodes) {
@@ -355,7 +395,7 @@ var onRedo = function() {
 };
 
 var onExportEdge = function() {
-    downloadText("out.txt", getEdgeString());
+    downloadText("out.txt", getEdgeListString());
 };
 
 var onExportSVG = function() {
@@ -509,6 +549,20 @@ var drawLocus = function() {
         .attr("stroke-opacity", 0.7)
         .attr("fill", "none");
 };
+
+var drawRange = function() {
+    if (editMode !== Mode.EDIT) return;
+    var range = d3svg.selectAll("rect").filter(".range").data([[dragStartX, dragStartY, mouseX, mouseY]]);
+    range.enter().append("rect");
+    range.exit().remove();
+    range.attr("class", "range")
+        .attr("x", function(d) { return Math.min(d[0], d[2]); })
+        .attr("y", function(d) { return Math.min(d[1], d[3]); })
+        .attr("width", function(d) { return Math.abs(d[2] - d[0]); })
+        .attr("height", function(d) { return Math.abs(d[3] - d[1]); })
+        .attr("fill", "royalblue")
+        .attr("fill-opacity", 0.5);
+}
 
 var drawSelectedNodes = function() {
     var selected = d3svg.selectAll("circle").filter(".selected-nodes").data(selectedNodes.map(function(x) {return graph.nodes[x];}));

@@ -4,8 +4,12 @@ body {
     font-family: Verdana, sans-serif;
 }
 
+input {
+    width: 130px;
+}
+
 div#wrapper {
-    width: 950px;
+    width: 1100px;
     margin: 0 auto;
 }
 
@@ -15,6 +19,12 @@ div#canvas {
 }
 
 div#toolbar {
+    float: left;
+    width: 150px;
+    text-align: center;
+}
+
+div#infobar {
     float: left;
     width: 150px;
     text-align: center;
