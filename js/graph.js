@@ -20,6 +20,7 @@ Graph.prototype = {
     deleteNode         :GraphDeleteNode,         //deleteNode(id)
     setNodePosition    :GraphSetNodePosition,    //setNodePosition(x,y)
     setNodeRadius      :GraphSetNodeRadius,      //setNodeRadius(id,radius)
+    getNodeRadius      :GraphGetNodeRadius,      //getNodeRadius(id)
     setNodeWidth       :GraphSetNodeWidth,       //setNodeWidth(id,width)
     setNodeColor       :GraphSetNodeColor,       //setNodeColor(id,color)
     getNodeColor       :GraphGetNodeColor,       //getNodeColor(id)
@@ -129,6 +130,10 @@ function GraphSetNodeRadius(id, radius) {
 
     this._addPatch(patch);
     this.onChanged();
+}
+
+function GraphGetNodeRadius(id) {
+    return this.nodes[id].radius;
 }
 
 function GraphSetNodeWidth(id, width) {

@@ -38,10 +38,20 @@ var layoutTimer;
 var layoutVx = [], layoutVy = [];
 var layoutCvx, layoutCvy;
 
+var defaultNodeSize = 20;
+
 var main = function() {
     svg = $("#main-svg");
     d3svg = d3.select("body").select("svg");
     graph = new Graph(onGraphChanged);
+    $("#node-size").slider({
+        min: 10,
+        max: 40,
+        step: 1,
+        value: defaultNodeSize,
+        slide: onSlideNodeSize,
+        change: onChangeNodeSize
+    });
 
     // draw grid
     for (var i = 0; i * gridWidth < canvasWidth; i++) {
@@ -116,18 +126,14 @@ var modifySelectedNodesOnMouseDown = function(id, shift) {
                 nodeClicked = -1;
             }
         }
-
         drawSelectedNodes();
-        $('#node-id').text(id);
-        $('#node-color').val(graph.getNodeColor(id));
-        $('#node-stroke-color').val(graph.getNodeStrokeColor(id));
+        updateNodePanel();
     }
 };
 
 var modifySelectedNodesOnMouseUp = function() {
     if (movedAfterMouseDown) {
         if (rangeSelectMode) {
-            console.log("poyo");
             var ul = [Math.min(dragStartX, mouseX), Math.min(dragStartY, mouseY)];
             var lr = [Math.max(dragStartX, mouseX), Math.max(dragStartY, mouseY)];
             for (var i in graph.nodes) {
@@ -154,6 +160,20 @@ var modifySelectedNodesOnMouseUp = function() {
     nodeClicked = -1;
     rangeSelectMode = false;
     drawSelectedNodes();
+    updateNodePanel();
+}
+
+var updateNodePanel = function() {
+    var id = -1;
+    if (selectedNodes.length > 0) {
+        id = selectedNodes[selectedNodes.length - 1];
+    }
+    if (id !== -1) {
+        $('#node-id').text(id);
+        $('#node-color').val(graph.getNodeColor(id));
+        $('#node-stroke-color').val(graph.getNodeStrokeColor(id));
+        $('#node-size').slider("value", graph.getNodeRadius(id));
+    }
 }
 
 var clearSelectedNodes = function() {
@@ -228,8 +248,8 @@ var selectAllNodes = function() {
     for (var i in graph.nodes) {
         selectedNodes.push(parseInt(i));
     }
-    console.log(selectedNodes);
     drawSelectedNodes();
+    updateNodePanel();
 }
 
 var onSVGMouseDown = function(e) {
@@ -380,6 +400,7 @@ var setEditMode = function(mode) {
         break;
     }
     activeElement.addClass("active");
+    updateNodePanel();
 };
 
 var onUndo = function() {
@@ -429,6 +450,24 @@ var onImportJSON = function() {
     drawGraph();
 };
 
+var onSlideNodeSize = function(e, ui) {
+    for (var i = 0; i < selectedNodes.length; ++i) {
+        graph.setNodeRadius(selectedNodes[i], ui.value);
+    }
+}
+
+var onChangeNodeSize = function(e, ui) {
+    if (e.originalEvent) {
+        for (var i = 0; i < selectedNodes.length; ++i) {
+            graph.setNodeRadius(selectedNodes[i], ui.value);
+        }
+        
+        if (selectedNodes.length > 0) {
+            graph.commit();
+        }
+    }
+}
+
 var onChangeNodeColor = function() {
     for (var i = 0; i < selectedNodes.length; ++i) {
         graph.setNodeColor(selectedNodes[i], $("#node-color").val());
@@ -448,7 +487,6 @@ var onChangeNodeStrokeColor = function() {
         graph.commit();
     }
 };
-
 
 var toggleGridMode = function(){
     gridMode = !gridMode;

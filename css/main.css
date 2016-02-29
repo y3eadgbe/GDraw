@@ -90,3 +90,24 @@ div#footer {
     width: 61px;
     font-size: 15px;
 }
+
+.slider {
+    width: 110px;
+    margin: 15px 20px;
+}
+
+.ui-slider .ui-slider-handle {
+    width: 15px;
+}
+
+.heading {
+    text-align: center;
+    text-decolation: none;
+    display: inline-block;
+    border: 2px solid #bbbbbb;
+    width: 130px;
+    height: 24px;
+    line-height: 24px;
+    font-size: 16px;
+    margin: 6px 0 4px 0;
+}
