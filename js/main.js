@@ -88,6 +88,7 @@ var main = function() {
     $("#btn-import-json").click(onImportJSON);
     $("#node-color").change(onChangeNodeColor);
     $("#node-stroke-color").change(onChangeNodeStrokeColor);
+    $("#node-mine").change(onChangeNodeMine);
 
     // shortcuts
     shortcut.add("Ctrl+Z", onUndo, {"disable_in_input": true});
@@ -173,6 +174,7 @@ var updateNodePanel = function() {
         $('#node-color').val(graph.getNodeColor(id));
         $('#node-stroke-color').val(graph.getNodeStrokeColor(id));
         $('#node-size').slider("value", graph.getNodeRadius(id));
+	$('#node-mine')[0].checked = graph.getNodeMine(id);
     }
 }
 
@@ -487,6 +489,18 @@ var onChangeNodeStrokeColor = function() {
         graph.commit();
     }
 };
+
+var onChangeNodeMine = function() {
+    for (var i = 0; i < selectedNodes.length; ++i) {
+	console.log(i)
+	console.log($("#node-mine")[0].checked)
+	graph.setNodeMine(selectedNodes[i], $("#node-mine")[0].checked);
+    }
+
+    if (selectedNodes.length > 0) {
+	graph.commit();
+    }
+}
 
 var toggleGridMode = function(){
     gridMode = !gridMode;

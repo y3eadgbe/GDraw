@@ -26,6 +26,8 @@ Graph.prototype = {
     getNodeColor       :GraphGetNodeColor,       //getNodeColor(id)
     setNodeStrokeColor :GraphSetNodeStrokeColor, //setNodeStrokeColor(id,color)
     getNodeStrokeColor :GraphGetNodeStrokeColor, //getNodeStrokeColor(id)
+    setNodeMine        :GraphSetNodeMine,
+    getNodeMine        :GraphGetNodeMine,
     addEdge            :GraphAddEdge,            //addEdge(source,target,directed,width)
     deleteEdge         :GraphDeleteEdge,         //deleteEdge(id)
     setEdgeWidth       :GraphSetEdgeWidth,       //setEdgeWidth(id,width)
@@ -55,6 +57,7 @@ var GraphNode = function(id, x, y, radius, width, color, strokeColor) {
     this.width = width === undefined ? 2 : width;
     this.color = color === undefined ? "#ffffff" : color;
     this.strokeColor = strokeColor === undefined ? "#000000" : strokeColor;
+    this.mine = false;
 };
 
 GraphNode.prototype = {
@@ -169,6 +172,22 @@ function GraphSetNodeStrokeColor(id, color) {
 
 function GraphGetNodeStrokeColor(id) {
     return this.nodes[id].strokeColor;
+}
+
+function GraphSetNodeMine(id, mine) {
+    var patch = new Patch(UpdateType.NODE_ATTRIBUTE, this.nodes[id].copy(), undefined);
+    this.nodes[id].mine = mine;
+    if (mine === true) {
+	this.nodes[id].color = "#ff0000";
+    } else {
+	this.nodes[id].color = "#ffffff";
+    }
+    this._addPatch(patch);
+    this.onChanged();
+}
+
+function GraphGetNodeMine(id, mine) {
+    return this.nodes[id].mine;
 }
 
 function GraphDeleteNode(id) {
