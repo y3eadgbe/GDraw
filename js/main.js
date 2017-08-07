@@ -86,6 +86,7 @@ var main = function() {
     $("#btn-export-svg").click(onExportSVG);
     $("#btn-export-json").click(onExportJSON);
     $("#btn-import-json").click(onImportJSON);
+    $("#btn-export-icfpc").click(onExportICFPC);
     $("#node-color").change(onChangeNodeColor);
     $("#node-stroke-color").change(onChangeNodeStrokeColor);
     $("#node-mine").change(onChangeNodeMine);
@@ -429,6 +430,10 @@ var onExportJSON = function() {
     downloadText("out.json", getJSONString());
 };
 
+var onExportICFPC = function() {
+    downloadText("map.json", getICFPCString());
+}
+
 var onImportJSON = function() {
     var JSONobj = JSON.parse($("#textarea").val());
 
@@ -752,6 +757,34 @@ var getJSONString = function() {
 
     return JSON.stringify(JSONobj);
 };
+
+var getICFPCString = function() {
+    var sites = [];
+    var mines = [];
+    console.log(graph.nodes)
+    for (i in graph.nodes) {
+	var node = graph.nodes[i];
+	console.log(node);
+	sites.push({"id": node.id, "x": node.x, "y": node.y});
+	if (node.mine === true) {
+	    mines.push(node.id)
+	}
+    }
+    
+    var rivers = [];
+    for (i in graph.edges) {
+	var edge = graph.edges[i];
+	console.log(edge);
+	rivers.push({"source": edge.source, "target": edge.target});
+    }
+
+    var JSONobj = {
+	"sites": sites,
+	"rivers": rivers,
+	"mines": mines
+    };
+    return JSON.stringify(JSONobj);
+}
 
 var getEdgeListString = function() {
     var edges = graph.edges;
